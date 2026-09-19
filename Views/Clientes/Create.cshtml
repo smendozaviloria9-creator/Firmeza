@@ -1,0 +1,56 @@
+@model ClienteViewModel
+@{
+    ViewData["Title"] = "Nuevo cliente";
+}
+<div class="card p-4" style="max-width:600px;">
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Nombres" class="form-label"></label>
+                <input asp-for="Nombres" class="form-control" />
+                <span asp-validation-for="Nombres" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Apellidos" class="form-label"></label>
+                <input asp-for="Apellidos" class="form-control" />
+                <span asp-validation-for="Apellidos" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Documento" class="form-label"></label>
+                <input asp-for="Documento" class="form-control" />
+                <span asp-validation-for="Documento" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="EdadTexto" class="form-label">Edad</label>
+                <input asp-for="EdadTexto" class="form-control" placeholder="Ej: 32" />
+                <span asp-validation-for="EdadTexto" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Correo" class="form-label"></label>
+            <input asp-for="Correo" class="form-control" />
+            <span asp-validation-for="Correo" class="text-danger small"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Telefono" class="form-label"></label>
+            <input asp-for="Telefono" class="form-control" type="text"
+                   inputmode="numeric" pattern="[0-9]*" maxlength="10"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+            <span asp-validation-for="Telefono" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Direccion" class="form-label"></label>
+            <input asp-for="Direccion" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-dark">Guardar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

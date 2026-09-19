@@ -1,0 +1,16 @@
+@model Firmeza.Web.Models.Cliente
+@{
+    ViewData["Title"] = "Eliminar cliente";
+}
+<div class="card p-4" style="max-width:600px;">
+    <h5 class="text-danger">¿Confirmas eliminar este cliente?</h5>
+    <dl class="row mt-3">
+        <dt class="col-sm-4">Nombre completo</dt><dd class="col-sm-8">@Model.Nombres @Model.Apellidos</dd>
+        <dt class="col-sm-4">Documento</dt><dd class="col-sm-8">@Model.Documento</dd>
+    </dl>
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+</div>
