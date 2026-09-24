@@ -1,0 +1,17 @@
+@model Firmeza.Web.Models.Venta
+@{
+    ViewData["Title"] = "Eliminar venta";
+}
+
+<h2>Eliminar venta</h2>
+
+<div class="alert alert-danger">
+    ¿Estás seguro de eliminar la venta N° @Model.Id de <strong>@Model.Cliente?.Nombres @Model.Cliente?.Apellidos</strong>
+    por un total de @Model.Total.ToString("C")?
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+</form>

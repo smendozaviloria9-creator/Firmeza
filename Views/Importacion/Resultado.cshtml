@@ -1,0 +1,33 @@
+@model Firmeza.Web.Models.ViewModels.ImportResultViewModel
+@{
+    ViewData["Title"] = "Resultado de la importación";
+}
+
+<h2>Resultado de la importación</h2>
+
+<ul class="list-group mb-4">
+    <li class="list-group-item">Clientes insertados: <strong>@Model.ClientesInsertados</strong></li>
+    <li class="list-group-item">Clientes actualizados: <strong>@Model.ClientesActualizados</strong></li>
+    <li class="list-group-item">Productos insertados: <strong>@Model.ProductosInsertados</strong></li>
+    <li class="list-group-item">Productos actualizados: <strong>@Model.ProductosActualizados</strong></li>
+    <li class="list-group-item">Ventas insertadas: <strong>@Model.VentasInsertadas</strong></li>
+</ul>
+
+@if (Model.TuvoErrores)
+{
+    <div class="alert alert-warning">
+        <h5>Log de errores / inconsistencias (@Model.Errores.Count)</h5>
+        <ul>
+            @foreach (var error in Model.Errores)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+else
+{
+    <div class="alert alert-success">Importación completada sin errores.</div>
+}
+
+<a asp-action="Index" class="btn btn-secondary">Importar otro archivo</a>

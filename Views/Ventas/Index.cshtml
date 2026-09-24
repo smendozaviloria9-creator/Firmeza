@@ -1,0 +1,38 @@
+@model IEnumerable<Firmeza.Web.Models.Venta>
+
+<h2>Ventas</h2>
+
+<a asp-action="Create" class="btn btn-primary mb-3">+ Nueva venta</a>
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success">@TempData["Mensaje"]</div>
+}
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>N°</th>
+        <th>Fecha</th>
+        <th>Cliente</th>
+        <th>Total</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var venta in Model)
+    {
+        <tr>
+            <td>@venta.Id</td>
+            <td>@venta.Fecha.ToString("dd/MM/yyyy")</td>
+            <td>@venta.Cliente?.Nombres @venta.Cliente?.Apellidos</td>
+            <td>@venta.Total.ToString("C")</td>
+            <td>
+                <a asp-action="Details" asp-route-id="@venta.Id" class="btn btn-sm btn-outline-secondary">
+                    Ver detalle
+                </a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

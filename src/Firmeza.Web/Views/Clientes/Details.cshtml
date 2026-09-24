@@ -1,0 +1,16 @@
+@model Cliente
+@{
+    ViewData["Title"] = "Detalle del cliente";
+}
+<div class="card p-4" style="max-width:600px;">
+    <dl class="row mb-0">
+        <dt class="col-sm-4">Nombre completo</dt><dd class="col-sm-8">@Model.Nombres @Model.Apellidos</dd>
+        <dt class="col-sm-4">Documento</dt><dd class="col-sm-8">@Model.Documento</dd>
+        <dt class="col-sm-4">Correo</dt><dd class="col-sm-8">@Model.Correo</dd>
+        <dt class="col-sm-4">Teléfono</dt><dd class="col-sm-8">@Model.Telefono</dd>
+        <dt class="col-sm-4">Dirección</dt><dd class="col-sm-8">@Model.Direccion</dd>
+        <dt class="col-sm-4">Edad</dt><dd class="col-sm-8">@Model.Edad</dd>
+        <dt class="col-sm-4">Registrado</dt><dd class="col-sm-8">@Model.FechaRegistro.ToLocalTime()</dd>
+    </dl>
+    <a asp-action="Index" class="btn btn-outline-secondary mt-3">Volver</a>
+</div>

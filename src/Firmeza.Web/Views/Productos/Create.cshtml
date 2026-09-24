@@ -1,0 +1,53 @@
+@model ProductoViewModel
+@{
+    ViewData["Title"] = "Nuevo producto";
+}
+<div class="card p-4" style="max-width:600px;">
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label"></label>
+            <input asp-for="Nombre" class="form-control" />
+            <span asp-validation-for="Nombre" class="text-danger small"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Descripcion" class="form-label"></label>
+            <textarea asp-for="Descripcion" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Categoria" class="form-label"></label>
+                <input asp-for="Categoria" class="form-control" placeholder="Cemento, Varillas, Agregados..." />
+                <span asp-validation-for="Categoria" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="UnidadMedida" class="form-label"></label>
+                <input asp-for="UnidadMedida" class="form-control" placeholder="bulto, unidad, m3, kg" />
+                <span asp-validation-for="UnidadMedida" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="PrecioUnitario" class="form-label"></label>
+                <input asp-for="PrecioUnitario" class="form-control" />
+                <span asp-validation-for="PrecioUnitario" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Stock" class="form-label"></label>
+                <input asp-for="Stock" class="form-control" />
+                <span asp-validation-for="Stock" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="form-check mb-3">
+            <input asp-for="Activo" class="form-check-input" />
+            <label asp-for="Activo" class="form-check-label"></label>
+        </div>
+
+        <button type="submit" class="btn btn-dark">Guardar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
