@@ -1,0 +1,130 @@
+@model Firmeza.Web.ViewModels.VentaViewModel
+@{
+    ViewData["Title"] = "Registrar venta";
+}
+
+<h2>Registrar nueva venta</h2>
+
+<form asp-action="Create" method="post" id="formVenta">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="ClienteId" class="form-label"></label>
+        <select asp-for="ClienteId" asp-items="ViewBag.Clientes" class="form-select">
+            <option value="">-- Selecciona un cliente --</option>
+        </select>
+        <span asp-validation-for="ClienteId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Fecha" class="form-label"></label>
+        <input asp-for="Fecha" type="date" class="form-control" />
+        <span asp-validation-for="Fecha" class="text-danger"></span>
+    </div>
+
+    <h5>Productos</h5>
+    <table class="table" id="tablaProductos">
+        <thead>
+        <tr>
+            <th style="width: 40%">Producto</th>
+            <th style="width: 15%">Precio unitario</th>
+            <th style="width: 15%">Stock disponible</th>
+            <th style="width: 15%">Cantidad</th>
+            <th style="width: 15%"></th>
+        </tr>
+        </thead>
+        <tbody>
+        @{ var items = Model.Items.Count > 0 ? Model.Items : new List<Firmeza.Web.ViewModels.DetalleVentaItemViewModel> { new() }; }
+        @for (int i = 0; i < items.Count; i++)
+        {
+        <tr>
+            <td>
+                <select name="Items[@i].ProductoId" class="form-select producto-select">
+                    <option value="">-- Selecciona --</option>
+                    @foreach (var p in (List<Producto>)ViewBag.Productos)
+                    {
+                    <option value="@p.Id" data-precio="@p.PrecioUnitario" data-stock="@p.Stock">
+                        @p.Nombre
+                    </option>
+                    }
+                </select>
+            </td>
+            <td class="precio-unitario">—</td>
+            <td class="stock-disponible">—</td>
+            <td>
+                <input type="number" name="Items[@i].Cantidad" min="1" class="form-control cantidad-input" />
+            </td>
+            <td>
+                <button type="button" class="btn btn-outline-danger btn-sm btn-eliminar-fila">Quitar</button>
+            </td>
+        </tr>
+        }
+        </tbody>
+    </table>
+
+    <button type="button" id="btnAgregarFila" class="btn btn-outline-secondary btn-sm mb-3">
+        + Agregar producto
+    </button>
+
+    <div>
+        <button type="submit" class="btn btn-primary">Registrar venta</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+    function actualizarPrecioYStock(select) {
+        const fila = select.closest('tr');
+        const opcion = select.options[select.selectedIndex];
+        const precio = opcion.getAttribute('data-precio');
+        const stock = opcion.getAttribute('data-stock');
+        fila.querySelector('.precio-unitario').textContent = precio ? `$${precio}` : '—';
+        fila.querySelector('.stock-disponible').textContent = stock ?? '—';
+        const cantidadInput = fila.querySelector('.cantidad-input');
+        if (stock) {
+            cantidadInput.setAttribute('max', stock);
+        }
+    }
+
+    document.getElementById('tablaProductos').addEventListener('change', function (e) {
+        if (e.target.classList.contains('producto-select')) {
+            actualizarPrecioYStock(e.target);
+        }
+    });
+
+    document.getElementById('tablaProductos').addEventListener('click', function (e) {
+        if (e.target.classList.contains('btn-eliminar-fila')) {
+            const filas = document.querySelectorAll('#tablaProductos tbody tr');
+            if (filas.length > 1) {
+                e.target.closest('tr').remove();
+                reindexarFilas();
+            }
+        }
+    });
+
+    document.getElementById('btnAgregarFila').addEventListener('click', function () {
+        const tbody = document.querySelector('#tablaProductos tbody');
+        const filaOriginal = tbody.querySelector('tr');
+        const filaNueva = filaOriginal.cloneNode(true);
+
+        filaNueva.querySelector('.producto-select').selectedIndex = 0;
+        filaNueva.querySelector('.cantidad-input').value = '';
+        filaNueva.querySelector('.precio-unitario').textContent = '—';
+        filaNueva.querySelector('.stock-disponible').textContent = '—';
+
+        tbody.appendChild(filaNueva);
+        reindexarFilas();
+    });
+
+    function reindexarFilas() {
+        const filas = document.querySelectorAll('#tablaProductos tbody tr');
+        filas.forEach((fila, index) => {
+            fila.querySelector('.producto-select').setAttribute('name', `Items[${index}].ProductoId`);
+            fila.querySelector('.cantidad-input').setAttribute('name', `Items[${index}].Cantidad`);
+        });
+    }
+</script>
+}
