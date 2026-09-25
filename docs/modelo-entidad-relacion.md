@@ -35,7 +35,10 @@ erDiagram
         int Id PK
         int ClienteId FK
         datetime Fecha
+        decimal Subtotal
+        decimal Iva
         decimal Total
+        string ReciboArchivo "nullable"
     }
 
     DETALLE_VENTA {
@@ -57,3 +60,6 @@ erDiagram
 
 **Roles de Identity:** `Administrador` (acceso al panel Razor) y `Cliente`
 (sin acceso a Razor; pensado para consumir la app vía Blazor/React/Angular/Vue).
+
+**Nota Semana 2:** al registrar una venta se descuenta automáticamente el
+`Stock` del `PRODUCTO` según la `Cantidad` vendida en cada `DETALLE_VENTA`.
