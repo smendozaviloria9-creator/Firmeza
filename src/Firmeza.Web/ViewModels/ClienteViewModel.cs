@@ -27,7 +27,7 @@ public class ClienteViewModel
     [Required(ErrorMessage = "El teléfono es obligatorio")]
     [RegularExpression(@"^[0-9]{7,10}$", ErrorMessage = "El teléfono debe contener solo números (7 a 10 dígitos)")]
     [Display(Name = "Teléfono")]
-    public string Telefono { get; set; }
+    public string Telefono { get; set; } = string.Empty;
     
 
     [StringLength(200)]

@@ -187,16 +187,32 @@ public class ExcelImportService : IExcelImportService
                         continue;
                     }
 
+                    if (producto.Stock < cantidad)
+                    {
+                        resultado.Errores.Add($"Fila {fila}: stock insuficiente para '{producto.Nombre}'. Solicitado: {cantidad}, disponible: {producto.Stock}.");
+                        continue;
+                    }
+
                     if (!DateTime.TryParse(ventaFechaTxt, out var fecha))
+                    {
                         fecha = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        fecha = DateTime.SpecifyKind(fecha, DateTimeKind.Utc);
+                    }
 
                     var subtotal = cantidad * producto.PrecioUnitario;
+                    var iva = Math.Round(subtotal * ReciboService.PorcentajeIva, 2);
+                    var total = subtotal + iva;
 
                     var venta = new Venta
                     {
                         ClienteId = cliente.Id,
                         Fecha = fecha,
-                        Total = subtotal,
+                        Subtotal = subtotal,
+                        Iva = iva,
+                        Total = total,
                         Detalles = new List<DetalleVenta>
                         {
                             new DetalleVenta
@@ -209,6 +225,7 @@ public class ExcelImportService : IExcelImportService
                         }
                     };
 
+                    producto.Stock -= cantidad;
                     _context.Ventas.Add(venta);
                     resultado.VentasInsertadas++;
                 }

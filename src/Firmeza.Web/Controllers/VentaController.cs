@@ -65,24 +65,28 @@ public class VentasController : Controller
         }
 
         // Cargar productos involucrados para tomar su precio actual
-        var productoIds = vm.Items.Select(i => i.ProductoId).ToList();
+        var productoIds = vm.Items!.Select(i => i.ProductoId).Distinct().ToList();
         var productos = await _context.Productos
             .Where(p => productoIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id);
 
-        // Validar existencia y stock disponible antes de guardar nada
-        foreach (var item in vm.Items)
+        // Validar existencia y stock disponible total acumulado por producto
+        var cantidadesPorProducto = vm.Items!
+            .GroupBy(i => i.ProductoId)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.Cantidad));
+
+        foreach (var kvp in cantidadesPorProducto)
         {
-            if (!productos.TryGetValue(item.ProductoId, out var productoValidar))
+            if (!productos.TryGetValue(kvp.Key, out var productoValidar))
             {
-                ModelState.AddModelError("", $"El producto seleccionado (Id {item.ProductoId}) no existe.");
+                ModelState.AddModelError("", $"El producto seleccionado (Id {kvp.Key}) no existe.");
                 continue;
             }
 
-            if (item.Cantidad > productoValidar.Stock)
+            if (kvp.Value > productoValidar.Stock)
             {
                 ModelState.AddModelError("",
-                    $"No hay stock suficiente de '{productoValidar.Nombre}'. Disponible: {productoValidar.Stock}.");
+                    $"No hay stock suficiente de '{productoValidar.Nombre}'. Solicitado: {kvp.Value}, disponible: {productoValidar.Stock}.");
             }
         }
 
@@ -101,7 +105,7 @@ public class VentasController : Controller
 
         decimal subtotalGeneral = 0;
 
-        foreach (var item in vm.Items)
+        foreach (var item in vm.Items!)
         {
             var producto = productos[item.ProductoId];
 

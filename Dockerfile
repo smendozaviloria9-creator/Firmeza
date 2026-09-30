@@ -3,6 +3,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY Firmeza.sln .
+COPY src/Firmeza.Domain/Firmeza.Domain.csproj src/Firmeza.Domain/
+COPY src/Firmeza.Application/Firmeza.Application.csproj src/Firmeza.Application/
+COPY src/Firmeza.Infrastructure/Firmeza.Infrastructure.csproj src/Firmeza.Infrastructure/
 COPY src/Firmeza.Web/Firmeza.Web.csproj src/Firmeza.Web/
 COPY src/Firmeza.Tests/Firmeza.Tests.csproj src/Firmeza.Tests/
 RUN dotnet restore src/Firmeza.Web/Firmeza.Web.csproj

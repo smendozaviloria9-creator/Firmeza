@@ -17,7 +17,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // Identity con roles (Administrador / Cliente)
-builder.Services.AddScoped<IExcelImportService, ExcelImportService>();
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
         options.Password.RequireDigit = true;
@@ -47,7 +46,8 @@ builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IReciboService, ReciboService>();
 
 var app = builder.Build();
-var carpetaRecibos = Path.Combine(app.Environment.WebRootPath, "recibos");
+var webRoot = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+var carpetaRecibos = Path.Combine(webRoot, "recibos");
 if (!Directory.Exists(carpetaRecibos))
 {
     Directory.CreateDirectory(carpetaRecibos);

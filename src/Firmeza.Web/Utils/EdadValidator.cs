@@ -36,6 +36,7 @@ public static class EdadValidator
         if (edad < EdadMinima || edad > EdadMaxima)
         {
             mensajeError = $"La edad debe estar entre {EdadMinima} y {EdadMaxima} años.";
+            edad = 0;
             return false;
         }
 
