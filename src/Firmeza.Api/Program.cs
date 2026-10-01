@@ -63,6 +63,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddAutoMapper(cfg => { }, typeof(Firmeza.Application.Mapping.MappingProfile));
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
