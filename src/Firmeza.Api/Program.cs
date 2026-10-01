@@ -2,6 +2,8 @@ using System.Text;
 using Firmeza.Domain.Entities;
 using Firmeza.Infrastructure.Data;
 using Firmeza.Infrastructure.Identity;
+using Firmeza.Application.Interfaces;
+using Firmeza.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -64,6 +66,7 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(cfg => { }, typeof(Firmeza.Application.Mapping.MappingProfile));
+builder.Services.AddScoped<IReciboService, ReciboService>();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
