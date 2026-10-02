@@ -4,6 +4,7 @@ using System.Text;
 using Firmeza.Application.DTOs.Auth;
 using Firmeza.Domain.Entities;
 using Firmeza.Infrastructure.Identity;
+using Firmeza.Application.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -17,15 +18,18 @@ public class AuthController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IEmailService emailService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     [HttpPost("login")]
@@ -73,6 +77,13 @@ public class AuthController : ControllerBase
         }
 
         await _userManager.AddToRoleAsync(user, Roles.Cliente);
+
+        // Notificacion por correo de bienvenida (Task 8)
+        await _emailService.EnviarCorreoAsync(
+            user.Email!,
+            "Bienvenido a Firmeza - Tu cuenta ha sido creada",
+            $"<h2>¡Hola, {user.NombreCompleto}!</h2><p>Te damos la bienvenida a <strong>Firmeza</strong>. Tu cuenta ha sido creada exitosamente con el correo <strong>{user.Email}</strong>.</p><p>Ya puedes iniciar sesión y realizar tus compras de materiales.</p>"
+        );
 
         var roles = await _userManager.GetRolesAsync(user);
         var token = GenerarToken(user, roles);

@@ -19,13 +19,20 @@ public class VentasController : ControllerBase
     private readonly IMapper _mapper;
     private readonly IReciboService _reciboService;
     private readonly IWebHostEnvironment _env;
+    private readonly IEmailService _emailService;
 
-    public VentasController(ApplicationDbContext context, IMapper mapper, IReciboService reciboService, IWebHostEnvironment env)
+    public VentasController(
+        ApplicationDbContext context,
+        IMapper mapper,
+        IReciboService reciboService,
+        IWebHostEnvironment env,
+        IEmailService emailService)
     {
         _context = context;
         _mapper = mapper;
         _reciboService = reciboService;
         _env = env;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -117,6 +124,18 @@ public class VentasController : ControllerBase
         var nombreArchivo = _reciboService.GenerarRecibo(ventaCompleta, carpetaRecibos);
         venta.ReciboArchivo = nombreArchivo;
         await _context.SaveChangesAsync();
+
+        // Notificacion por correo de confirmacion de compra (Task 8)
+        if (!string.IsNullOrWhiteSpace(ventaCompleta.Cliente?.Correo))
+        {
+            await _emailService.EnviarCorreoAsync(
+                ventaCompleta.Cliente.Correo,
+                $"Confirmacion de compra N° {venta.Id} - Firmeza",
+                $"<h2>¡Gracias por tu compra, {ventaCompleta.Cliente.Nombres}!</h2>" +
+                $"<p>Tu orden <strong>N° {venta.Id}</strong> por un total de <strong>${venta.Total:N2}</strong> ha sido procesada con éxito.</p>" +
+                $"<p>Fecha: {venta.Fecha:dd/MM/yyyy HH:mm} UTC</p>"
+            );
+        }
 
         var resultado = _mapper.Map<VentaDto>(ventaCompleta);
         return CreatedAtAction(nameof(GetById), new { id = venta.Id }, resultado);

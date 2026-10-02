@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="15.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.0" />
@@ -15,6 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Firmeza.Application\Firmeza.Application.csproj" />
+    <ProjectReference Include="..\Firmeza.Api\Firmeza.Api.csproj" />
     <ProjectReference Include="..\Firmeza.Web\Firmeza.Web.csproj" />
   </ItemGroup>
 
