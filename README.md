@@ -1,148 +1,181 @@
-# Firmeza — Sistema de gestion de materiales de construccion
+# Firmeza — Sistema de gestión de materiales de construcción
 
-Panel administrativo ASP.NET Core MVC para una empresa de venta de
-materiales de construccion, con autenticacion por roles, importacion
-y exportacion masiva de datos, generacion de recibos PDF, y arquitectura
-limpia (Clean Architecture) organizada en 4 capas.
+Sistema integral para una empresa de venta de materiales de construcción con arquitectura limpia (**Clean Architecture**) en 4 capas, que incluye:
+* **Panel administrativo Razor MVC** (`Firmeza.Web`) con autenticación por roles, importación/exportación masiva Excel y recibos PDF.
+* **API RESTful** (`Firmeza.Api`) con autenticación JWT, AutoMapper, documentación Swagger interactiva y servicio de notificaciones por correo SMTP.
+* **Base de datos compartida** en PostgreSQL 16 con Entity Framework Core 10.
+* **Frontend cliente** en Angular (`firmeza-frontend`).
 
-## Stack tecnico
+---
 
-| Capa            | Tecnologia                                          |
-|------------------|------------------------------------------------------|
-| Backend/Panel    | ASP.NET Core 10 MVC (Razor Views)                    |
-| Base de datos    | PostgreSQL 16 + Npgsql.EntityFrameworkCore           |
-| ORM              | Entity Framework Core 10 (Code First + Migraciones)  |
-| Autenticacion    | ASP.NET Core Identity (roles: Administrador, Cliente)|
-| Importacion/Excel| EPPlus                                                |
-| Exportacion/PDF  | QuestPDF                                              |
-| UI               | Bootstrap 5 + Bootstrap Icons                        |
-| Pruebas          | xUnit                                                 |
-| Empaquetado      | Docker + docker-compose                              |
+## 🛠️ Stack técnico
 
-## Arquitectura (Clean Architecture)
+| Capa / Módulo | Tecnología |
+| :--- | :--- |
+| **API RESTful** | ASP.NET Core 10 Web API |
+| **Panel Web** | ASP.NET Core 10 MVC (Razor Views + Bootstrap 5) |
+| **Base de datos** | PostgreSQL 16 + Npgsql.EntityFrameworkCore |
+| **ORM** | Entity Framework Core 10 (Code First + Migraciones) |
+| **Autenticación Panel** | ASP.NET Core Identity (Cookies) |
+| **Autenticación API** | JWT Bearer Tokens (Roles: `Administrador`, `Cliente`) |
+| **Mapeo de DTOs** | AutoMapper 15.1 |
+| **Documentación API** | Swagger UI (Swashbuckle con soporte JWT) |
+| **Servicio de Correo** | SMTP (Gmail) desacoplado mediante Clean Architecture |
+| **Importación/Excel** | EPPlus |
+| **Exportación/PDF** | QuestPDF |
+| **Pruebas unitarias** | xUnit (26 pruebas automatizadas) |
+| **Empaquetado** | Docker + Docker Compose |
+| **Frontend Cliente** | Angular (en desarrollo) |
 
-El proyecto esta organizado en 4 capas, cada una en su propio proyecto
-.NET, con las dependencias fluyendo en una sola direccion:
+---
+
+## 🏗️ Arquitectura (Clean Architecture)
+
+Las dependencias fluyen en una sola dirección hacia el dominio, desacoplando completamente la lógica de negocio de la infraestructura y de las interfaces de usuario:
 
 ```
-Firmeza.Web --> Firmeza.Application
-Firmeza.Web --> Firmeza.Infrastructure
-Firmeza.Infrastructure --> Firmeza.Application
-Firmeza.Application --> Firmeza.Domain
-Firmeza.Infrastructure --> Firmeza.Domain
+    ┌─────────────────┐       ┌─────────────────┐
+    │   Firmeza.Web   │       │   Firmeza.Api   │
+    │   (Panel Razor) │       │   (API REST)    │
+    └────────┬────────┘       └────────┬────────┘
+             │                         │
+             ▼                         ▼
+    ┌───────────────────────────────────────────┐
+    │            Firmeza.Application            │
+    │   (Interfaces, DTOs, MappingProfile)      │
+    └─────────────────────┬─────────────────────┘
+                          ▲
+                          │
+    ┌─────────────────────┴─────────────────────┐
+    │           Firmeza.Infrastructure          │
+    │   (DbContext, Identity, SMTP, Servicios)  │
+    └─────────────────────┬─────────────────────┘
+                          │
+                          ▼
+    ┌───────────────────────────────────────────┐
+    │              Firmeza.Domain               │
+    │         (Entidades puras del negocio)     │
+    └───────────────────────────────────────────┘
 ```
 
-- **Firmeza.Domain**: entidades puras del negocio (Producto, Cliente,
-  Venta, DetalleVenta, Roles), sin dependencias externas.
-- **Firmeza.Application**: interfaces de los servicios de la aplicacion
-  (IExcelImportService, IExportService, IReciboService) y DTOs
-  (ImportResultViewModel).
-- **Firmeza.Infrastructure**: implementacion concreta de EF Core
-  (ApplicationDbContext, DbInitializer, Migrations), Identity
-  (ApplicationUser), y los 3 servicios (ExcelImportService,
-  ExportService, ReciboService).
-- **Firmeza.Web**: controladores, vistas Razor, ViewModels y el punto
-  de composicion (Program.cs) donde se registran las implementaciones
-  concretas contra sus interfaces.
+* **`Firmeza.Domain`**: Entidades del negocio sin dependencias externas (`Producto`, `Cliente`, `Venta`, `DetalleVenta`, `Roles`).
+* **`Firmeza.Application`**: Contratos e interfaces (`IExcelImportService`, `IExportService`, `IReciboService`, `IEmailService`), DTOs y perfiles de AutoMapper.
+* **`Firmeza.Infrastructure`**: Implementación de base de datos (`ApplicationDbContext`, migraciones), Identity (`ApplicationUser`), servicios externos (`ExcelImportService`, `ExportService`, `ReciboService`, `SmtpEmailService`).
+* **`Firmeza.Api`**: Controladores RESTful, seguridad JWT, configuración de Swagger y CORS.
+* **`Firmeza.Web`**: Controladores MVC y vistas Razor para el panel de administración.
 
-Ver los diagramas completos en `docs/diagrama-de-clases.md` y
-`docs/modelo-entidad-relacion.md`.
+---
 
-## Roles del sistema
+## 🔐 Roles del sistema
 
-- **Administrador**: puede iniciar sesion en el panel Razor y gestionar
-  productos, clientes y ventas.
-- **Cliente**: existe en la base de Identity, pero no puede iniciar
-  sesion en este panel. Esta pensado para una futura app de clientes
-  separada.
+* **`Administrador`**: Acceso total al panel Razor y permisos de escritura/eliminación en la API (crear/modificar productos, gestionar clientes y registrar ventas).
+* **`Cliente`**: Usuarios registrados a través de la API (`/api/auth/registro-cliente`) para realizar pedidos y compras desde aplicaciones cliente (como Angular o Blazor).
 
-## Como correrlo en local (sin Docker)
+---
 
-### 1. Requisitos
-- .NET SDK 10.0+
-- PostgreSQL 16 corriendo localmente (o en un contenedor)
-- Herramientas de EF Core: `dotnet tool install --global dotnet-ef`
+## 🚀 API RESTful (Semana 3)
 
-### 2. Configurar la cadena de conexion
-Edita `src/Firmeza.Web/appsettings.Development.json`, o usa
-`dotnet user-secrets` para no subir credenciales al repositorio:
+### Endpoints principales
 
-```bash
-cd src/Firmeza.Web
-dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=firmeza_db;Username=firmeza_user;Password=TU_CLAVE"
+#### 🔑 Autenticación (`/api/auth`)
+* `POST /api/auth/login`: Autentica credenciales y devuelve el token JWT con sus claims y roles.
+* `POST /api/auth/registro-cliente`: Registra un nuevo usuario con rol `Cliente` y dispara un correo de bienvenida automático.
+
+#### 📦 Productos (`/api/productos`)
+* `GET /api/productos`: Lista de productos con soporte para búsqueda (`?buscar=cemento`) y filtro por categoría (`?categoria=Materiales`).
+* `GET /api/productos/{id}`: Detalle de un producto por su identificador.
+* `POST /api/productos`: Crea un nuevo producto (Requiere rol `Administrador`).
+* `PUT /api/productos/{id}`: Actualiza un producto existente (Requiere rol `Administrador`).
+* `DELETE /api/productos/{id}`: Elimina un producto (Requiere rol `Administrador`).
+
+#### 👥 Clientes (`/api/clientes`)
+* `GET /api/clientes`: Listado de clientes (Requiere rol `Administrador`).
+* `GET /api/clientes/{id}`: Detalle de cliente por ID.
+* `POST /api/clientes`: Crea un cliente con validación de edad (18-120 años).
+* `PUT /api/clientes/{id}`: Modifica datos de un cliente.
+* `DELETE /api/clientes/{id}`: Elimina un cliente.
+
+#### 🛒 Ventas (`/api/ventas`)
+* `GET /api/ventas`: Historial de ventas con sus clientes y productos incluidos.
+* `GET /api/ventas/{id}`: Detalle completo de una venta.
+* `POST /api/ventas`: Registra una nueva venta con:
+  * Validación de stock acumulado por producto (previene stock negativo).
+  * Descuento automático de inventario.
+  * Cálculo contable de Subtotal e IVA (19%).
+  * Generación automática del recibo PDF en `wwwroot/recibos/`.
+  * Envío de correo de confirmación de compra al cliente.
+* `DELETE /api/ventas/{id}`: Elimina una venta (Requiere rol `Administrador`).
+
+---
+
+## 📖 Cómo probar la API con Swagger UI
+
+1. Ejecuta el proyecto `Firmeza.Api`:
+   ```bash
+   cd src/Firmeza.Api
+   dotnet run
+   ```
+2. Abre en tu navegador la URL de Swagger:
+   ```text
+   http://localhost:5000/swagger   (o el puerto asignado por la consola)
+   ```
+3. **Para probar endpoints protegidos:**
+   * Haz una petición en `POST /api/auth/login` con el usuario administrador inicial:
+     * **Email:** `admin@firmeza.com`
+     * **Password:** `Admin123$`
+   * Copia el valor de `"token"` recibido en la respuesta JSON.
+   * Haz clic en el botón verde **Authorize** (candado 🔓) en la parte superior derecha de Swagger.
+   * Pega el token y presiona **Authorize**.
+   * ¡Listo! Ahora todos los endpoints con autorización funcionarán directamente desde Swagger.
+
+---
+
+## 📧 Configuración del servicio de correo (SMTP Gmail)
+
+En `src/Firmeza.Api/appsettings.json`:
+
+```json
+"SmtpSettings": {
+  "Host": "smtp.gmail.com",
+  "Port": 587,
+  "SenderEmail": "tu_correo@gmail.com",
+  "SenderName": "Firmeza Materiales",
+  "Password": "TU_CONTRASENA_DE_APLICACION_GMAIL",
+  "EnableSsl": true
+}
 ```
 
-### 3. Restaurar paquetes y aplicar migraciones
+> **Nota sobre Gmail:** Para enviar correos reales, debes ingresar a tu cuenta de Google → **Seguridad** → **Verificación en 2 pasos** → **Contraseñas de aplicaciones**, generar una clave de 16 letras y colocarla en `Password`. Si se deja el valor por defecto, el servicio simula el envío y registra un log sin fallar.
 
-```bash
-dotnet restore
-cd src/Firmeza.Web
-dotnet ef database update
-```
+---
 
-### 4. Ejecutar la aplicacion
+## 🧪 Pruebas unitarias
 
-```bash
-dotnet run
-```
-
-Al arrancar, `DbInitializer` aplica automaticamente las migraciones
-pendientes y siembra los roles (`Administrador`, `Cliente`) y un usuario
-administrador inicial, configurable en `appsettings.json` seccion
-`AdminSeed` (por defecto `admin@firmeza.com` / `Admin123$`).
-
-Abre `http://localhost:5000` (o el puerto que indique la consola).
-
-## Como correrlo con Docker
-
-Crea un archivo `.env` en la raiz del proyecto con la contrasena de
-PostgreSQL:
-
-```bash
-echo "DB_PASSWORD=TU_CLAVE" > .env
-```
-
-Levanta los contenedores:
-
-```bash
-docker compose up -d --build
-```
-
-Esto levanta:
-- `db`: PostgreSQL 16 con la base `firmeza_db`, con healthcheck.
-- `web`: la app ASP.NET Core, escuchando en `http://localhost:8080`.
-
-El contenedor `web` espera a que `db` este saludable antes de arrancar
-(gracias al healthcheck y `depends_on: condition: service_healthy`), y
-aplica las migraciones y el seed automaticamente al iniciar.
-
-## Funcionalidades de la Semana 2
-
-- **Importacion masiva desde Excel**: carga un archivo `.xlsx` con
-  columnas de cliente, producto y venta mezcladas; el sistema normaliza,
-  valida e inserta/actualiza los registros, mostrando un log de errores
-  por fila (`ImportacionController`, `ExcelImportService`).
-- **Exportacion a Excel y PDF**: Productos, Clientes y Ventas se pueden
-  exportar en ambos formatos desde sus respectivas vistas
-  (`ExportacionController`, `ExportService`).
-- **Recibos PDF**: cada venta genera automaticamente un recibo en PDF
-  (`ReciboService`), guardado en `wwwroot/recibos` y descargable desde
-  el detalle de la venta.
-- **Descuento de stock**: al registrar una venta, el stock del producto
-  se descuenta segun la cantidad vendida.
-- **Diseno visual uniforme**: sidebar, encabezado y pie de pagina
-  consistentes en todas las vistas del panel.
-
-## Pruebas unitarias
+El proyecto cuenta con **26 pruebas unitarias automatizadas** usando **xUnit**:
 
 ```bash
 cd src/Firmeza.Tests
 dotnet test
 ```
 
-## Notas de seguridad
+### Módulos probados:
+* **`EdadValidatorTests` (18 tests):** Validación de edad mínima (18) y máxima (120), valores nulos, texto no numérico y desbordamientos.
+* **`VentaTests` (3 tests):** Cálculo exacto de IVA (19%), Subtotal, Total y descuento de inventario.
+* **`MappingProfileTests` (4 tests):** Inicialización y validación de AutoMapper para DTOs de Productos, Clientes y Ventas.
+* **`SmtpEmailServiceTests` (1 test):** Resiliencia y manejo de fallback en el servicio de correo.
 
-El archivo `.env` (con la contrasena de la base de datos) y las carpetas
-`bin/`, `obj/` estan excluidas del control de versiones via
-`.gitignore`. Nunca subas credenciales reales al repositorio.
+---
+
+## 🐳 Despliegue con Docker
+
+Crea un archivo `.env` en la raíz con la contraseña de PostgreSQL:
+```bash
+echo "DB_PASSWORD=TU_CLAVE" > .env
+```
+
+Levanta los contenedores:
+```bash
+docker compose up -d --build
+```
+* **PostgreSQL:** `localhost:5432`
+* **Panel Web:** `http://localhost:8080`
