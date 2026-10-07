@@ -17,6 +17,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Venta> Ventas => Set<Venta>();
     public DbSet<DetalleVenta> DetallesVenta => Set<DetalleVenta>();
+    public DbSet<Vehiculo> Vehiculos => Set<Vehiculo>();
+    public DbSet<VentaVehiculo> VentasVehiculos => Set<VentaVehiculo>();
+    public DbSet<Renta> Rentas => Set<Renta>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -46,6 +49,34 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(d => d.Producto)
             .WithMany(p => p.DetallesVenta)
             .HasForeignKey(d => d.ProductoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Vehiculo>()
+            .HasIndex(v => v.Placa)
+            .IsUnique();
+
+        builder.Entity<VentaVehiculo>()
+            .HasOne(vv => vv.Cliente)
+            .WithMany(c => c.VentasVehiculos)
+            .HasForeignKey(vv => vv.ClienteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<VentaVehiculo>()
+            .HasOne(vv => vv.Vehiculo)
+            .WithOne(v => v.VentaVehiculo)
+            .HasForeignKey<VentaVehiculo>(vv => vv.VehiculoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Renta>()
+            .HasOne(r => r.Cliente)
+            .WithMany(c => c.Rentas)
+            .HasForeignKey(r => r.ClienteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Renta>()
+            .HasOne(r => r.Vehiculo)
+            .WithMany(v => v.Rentas)
+            .HasForeignKey(r => r.VehiculoId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

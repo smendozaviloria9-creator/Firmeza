@@ -39,4 +39,6 @@ public class Cliente
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
 
     public ICollection<Venta> Ventas { get; set; } = new List<Venta>();
+    public ICollection<VentaVehiculo> VentasVehiculos { get; set; } = new List<VentaVehiculo>();
+    public ICollection<Renta> Rentas { get; set; } = new List<Renta>();
 }
