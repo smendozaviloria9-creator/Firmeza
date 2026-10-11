@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Firmeza.Infrastructure.Services;
 
-public class ExportService : IExportService
+public partial class ExportService : IExportService
 {
     private readonly ApplicationDbContext _context;
 
