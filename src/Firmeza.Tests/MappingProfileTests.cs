@@ -34,11 +34,11 @@ public class MappingProfileTests
         // Arrange
         var dto = new ProductoCreateDto
         {
-            Nombre = "Cemento Portland",
-            Descripcion = "Bulto de 50kg",
-            Categoria = "Cementos",
-            UnidadMedida = "Bulto",
-            PrecioUnitario = 32000m,
+            Nombre = "Filtro de Aceite Sintético",
+            Descripcion = "Protección avanzada para motor",
+            Categoria = "Motor",
+            UnidadMedida = "Unidad",
+            PrecioUnitario = 45000m,
             Stock = 100
         };
 

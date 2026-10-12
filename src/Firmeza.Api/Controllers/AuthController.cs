@@ -81,8 +81,8 @@ public class AuthController : ControllerBase
         // Notificacion por correo de bienvenida (Task 8)
         await _emailService.EnviarCorreoAsync(
             user.Email!,
-            "Bienvenido a Firmeza - Tu cuenta ha sido creada",
-            $"<h2>¡Hola, {user.NombreCompleto}!</h2><p>Te damos la bienvenida a <strong>Firmeza</strong>. Tu cuenta ha sido creada exitosamente con el correo <strong>{user.Email}</strong>.</p><p>Ya puedes iniciar sesión y realizar tus compras de materiales.</p>"
+            "Bienvenido a Firmeza Concesionario - Tu cuenta ha sido creada",
+            $"<h2>¡Hola, {user.NombreCompleto}!</h2><p>Te damos la bienvenida a <strong>Firmeza Concesionario</strong>. Tu cuenta ha sido creada exitosamente con el correo <strong>{user.Email}</strong>.</p><p>Ya puedes iniciar sesión para adquirir tus repuestos de vehículos y realizar compras o alquileres de autos.</p>"
         );
 
         var roles = await _userManager.GetRolesAsync(user);

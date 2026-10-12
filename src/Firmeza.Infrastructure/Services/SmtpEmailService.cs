@@ -25,7 +25,7 @@ public class SmtpEmailService : IEmailService
         if (port == 0) port = 587;
 
         var senderEmail = _configuration["SmtpSettings:SenderEmail"] ?? "notificaciones@firmeza.com";
-        var senderName = _configuration["SmtpSettings:SenderName"] ?? "Firmeza Materiales";
+        var senderName = _configuration["SmtpSettings:SenderName"] ?? "Firmeza Concesionario";
         var password = _configuration["SmtpSettings:Password"];
         var enableSsl = bool.Parse(_configuration["SmtpSettings:EnableSsl"] ?? "true");
 

@@ -26,8 +26,8 @@ public class ReciboService : IReciboService
 
                 page.Header().Column(col =>
                 {
-                    col.Item().Text("Firmeza").FontSize(20).Bold();
-                    col.Item().Text("Materiales de construcción");
+                    col.Item().Text("Firmeza Concesionario").FontSize(20).Bold();
+                    col.Item().Text("Venta y Renta de Vehículos · Repuestos y Autopartes");
                     col.Item().PaddingTop(10).Text($"Recibo de venta N° {venta.Id}").FontSize(14).Bold();
                     col.Item().Text($"Fecha: {venta.Fecha:dd/MM/yyyy HH:mm}");
                 });
@@ -39,7 +39,7 @@ public class ReciboService : IReciboService
                     col.Item().Text($"Documento: {venta.Cliente?.Documento}");
                     col.Item().Text($"Teléfono: {venta.Cliente?.Telefono}");
 
-                    col.Item().PaddingTop(15).Text("Productos").Bold();
+                    col.Item().PaddingTop(15).Text("Repuestos / Productos").Bold();
 
                     col.Item().PaddingTop(5).Table(tabla =>
                     {
@@ -53,7 +53,7 @@ public class ReciboService : IReciboService
 
                         tabla.Header(header =>
                         {
-                            header.Cell().Text("Producto").Bold();
+                            header.Cell().Text("Repuesto").Bold();
                             header.Cell().Text("Cant.").Bold();
                             header.Cell().Text("Precio").Bold();
                             header.Cell().Text("Subtotal").Bold();

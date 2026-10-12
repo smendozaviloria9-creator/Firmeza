@@ -68,6 +68,9 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(cfg => { }, typeof(Firmeza.Application.Mapping.MappingProfile));
 builder.Services.AddScoped<IReciboService, ReciboService>();
+builder.Services.AddScoped<IExportService, ExportService>();
+OfficeOpenXml.ExcelPackage.License.SetNonCommercialPersonal("Sebastian Mendoza");
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 // CORS para clientes como Angular (localhost:4200)

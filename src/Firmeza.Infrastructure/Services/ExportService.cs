@@ -24,7 +24,7 @@ public partial class ExportService : IExportService
         var productos = await _context.Productos.OrderBy(p => p.Nombre).ToListAsync();
 
         using var package = new ExcelPackage();
-        var hoja = package.Workbook.Worksheets.Add("Productos");
+        var hoja = package.Workbook.Worksheets.Add("Repuestos");
 
         string[] encabezados = { "Nombre", "Descripción", "Categoría", "Unidad", "Precio", "Stock", "Activo" };
         for (int i = 0; i < encabezados.Length; i++)
@@ -58,7 +58,7 @@ public partial class ExportService : IExportService
             {
                 page.Size(PageSizes.A4);
                 page.Margin(30);
-                page.Header().Text("Listado de Productos").FontSize(18).Bold();
+                page.Header().Text("Firmeza Concesionario - Listado de Repuestos").FontSize(18).Bold();
 
                 page.Content().Table(tabla =>
                 {

@@ -44,9 +44,9 @@ public class VentaTests
         var producto = new Producto
         {
             Id = 1,
-            Nombre = "Cemento Gris",
+            Nombre = "Pastillas de Freno Cerámicas",
             Stock = 50,
-            PrecioUnitario = 28000m
+            PrecioUnitario = 180000m
         };
 
         // Act
