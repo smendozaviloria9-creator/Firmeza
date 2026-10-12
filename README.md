@@ -1,10 +1,14 @@
-# Firmeza — Sistema de gestión de materiales de construcción
+# Firmeza Concesionario — Sistema Integral de Gestión de Vehículos, Rentas y Repuestos
 
-Sistema integral para una empresa de venta de materiales de construcción con arquitectura limpia (**Clean Architecture**) en 4 capas, que incluye:
-* **Panel administrativo Razor MVC** (`Firmeza.Web`) con autenticación por roles, importación/exportación masiva Excel y recibos PDF.
-* **API RESTful** (`Firmeza.Api`) con autenticación JWT, AutoMapper, documentación Swagger interactiva y servicio de notificaciones por correo SMTP.
-* **Base de datos compartida** en PostgreSQL 16 con Entity Framework Core 10.
-* **Frontend cliente** en Angular (`firmeza-frontend`).
+Sistema empresarial para la gestión de un **concesionario automotriz** desarrollado con arquitectura limpia (**Clean Architecture**) en 4 capas, que cubre dos líneas clave de negocio:
+1. **Vehículos:** Venta de vehículos nuevos/usados y alquiler / renta de vehículos por día.
+2. **Repuestos y Autopartes:** Catálogo, control de stock y ventas de repuestos automotrices (reemplazando los materiales tradicionales por componentes automotrices como frenos, motor, suspensión, baterías, etc.).
+
+El ecosistema está compuesto por:
+* **API RESTful** (`Firmeza.Api`): ASP.NET Core 10 con autenticación JWT, documentación Swagger interactiva, AutoMapper, exportación masiva y servicio de notificaciones SMTP.
+* **Panel Web Administrativo** (`Firmeza.Web`): ASP.NET Core 10 MVC con autenticación por roles, importación/exportación masiva Excel y generación de recibos PDF.
+* **Base de datos relacional:** PostgreSQL 16 con Entity Framework Core 10 (compatible en local con Docker o en la nube con **Supabase**).
+* **Frontend cliente:** SPA desacoplada en Angular (`firmeza-frontend`).
 
 ---
 
@@ -14,18 +18,18 @@ Sistema integral para una empresa de venta de materiales de construcción con ar
 | :--- | :--- |
 | **API RESTful** | ASP.NET Core 10 Web API |
 | **Panel Web** | ASP.NET Core 10 MVC (Razor Views + Bootstrap 5) |
-| **Base de datos** | PostgreSQL 16 + Npgsql.EntityFrameworkCore |
+| **Base de datos** | PostgreSQL 16 / Supabase + Npgsql.EntityFrameworkCore |
 | **ORM** | Entity Framework Core 10 (Code First + Migraciones) |
 | **Autenticación Panel** | ASP.NET Core Identity (Cookies) |
 | **Autenticación API** | JWT Bearer Tokens (Roles: `Administrador`, `Cliente`) |
 | **Mapeo de DTOs** | AutoMapper 15.1 |
 | **Documentación API** | Swagger UI (Swashbuckle con soporte JWT) |
 | **Servicio de Correo** | SMTP (Gmail) desacoplado mediante Clean Architecture |
-| **Importación/Excel** | EPPlus |
-| **Exportación/PDF** | QuestPDF |
-| **Pruebas unitarias** | xUnit (26 pruebas automatizadas) |
+| **Importación / Exportación Excel** | EPPlus |
+| **Generación de Reportes / PDF** | QuestPDF |
+| **Pruebas unitarias** | xUnit (26 pruebas automatizadas en verde) |
 | **Empaquetado** | Docker + Docker Compose |
-| **Frontend Cliente** | Angular (en desarrollo) |
+| **Frontend Cliente** | Angular (Semana 4) |
 
 ---
 
@@ -58,18 +62,21 @@ Las dependencias fluyen en una sola dirección hacia el dominio, desacoplando co
     └───────────────────────────────────────────┘
 ```
 
-* **`Firmeza.Domain`**: Entidades del negocio sin dependencias externas (`Producto`, `Cliente`, `Venta`, `DetalleVenta`, `Roles`).
-* **`Firmeza.Application`**: Contratos e interfaces (`IExcelImportService`, `IExportService`, `IReciboService`, `IEmailService`), DTOs y perfiles de AutoMapper.
-* **`Firmeza.Infrastructure`**: Implementación de base de datos (`ApplicationDbContext`, migraciones), Identity (`ApplicationUser`), servicios externos (`ExcelImportService`, `ExportService`, `ReciboService`, `SmtpEmailService`).
-* **`Firmeza.Api`**: Controladores RESTful, seguridad JWT, configuración de Swagger y CORS.
-* **`Firmeza.Web`**: Controladores MVC y vistas Razor para el panel de administración.
+* **`Firmeza.Domain`**: Entidades centrales del negocio:
+  * **Vehículos & Operaciones:** `Vehiculo`, `VentaVehiculo`, `Renta`.
+  * **Repuestos & Ventas:** `Producto` (Autopartes y repuestos), `Venta`, `DetalleVenta`.
+  * **Clientes y Seguridad:** `Cliente`, `Roles` (`Administrador`, `Cliente`).
+* **`Firmeza.Application`**: Contratos e interfaces (`IExcelImportService`, `IExportService`, `IReciboService`, `IEmailService`), DTOs estructurados y perfiles de AutoMapper.
+* **`Firmeza.Infrastructure`**: Implementación de base de datos (`ApplicationDbContext`, migraciones), `DbInitializer` con datos semilla automotrices, Identity (`ApplicationUser`), y servicios externos (`ExcelImportService`, `ExportService`, `ReciboService`, `SmtpEmailService`).
+* **`Firmeza.Api`**: Controladores RESTful, seguridad JWT, configuración de Swagger y CORS habilitado para el frontend.
+* **`Firmeza.Web`**: Panel de administración MVC y vistas Razor.
 
 ---
 
 ## 🔐 Roles del sistema
 
-* **`Administrador`**: Acceso total al panel Razor y permisos de escritura/eliminación en la API (crear/modificar productos, gestionar clientes y registrar ventas).
-* **`Cliente`**: Usuarios registrados a través de la API (`/api/auth/registro-cliente`) para realizar pedidos y compras desde aplicaciones cliente (como Angular o Blazor).
+* **`Administrador`**: Acceso total al panel Razor y permisos de administración en la API (crear/modificar repuestos, vehículos, gestionar clientes, exportaciones y supervisar ventas y rentas).
+* **`Cliente`**: Usuarios registrados a través de la API (`/api/auth/registro-cliente`) para consultar vehículos, solicitar rentas o comprar repuestos desde el frontend.
 
 ---
 
@@ -79,32 +86,55 @@ Las dependencias fluyen en una sola dirección hacia el dominio, desacoplando co
 
 #### 🔑 Autenticación (`/api/auth`)
 * `POST /api/auth/login`: Autentica credenciales y devuelve el token JWT con sus claims y roles.
-* `POST /api/auth/registro-cliente`: Registra un nuevo usuario con rol `Cliente` y dispara un correo de bienvenida automático.
+* `POST /api/auth/registro-cliente`: Registra un nuevo usuario con rol `Cliente` y dispara un correo de bienvenida automático al concesionario.
 
-#### 📦 Productos (`/api/productos`)
-* `GET /api/productos`: Lista de productos con soporte para búsqueda (`?buscar=cemento`) y filtro por categoría (`?categoria=Materiales`).
-* `GET /api/productos/{id}`: Detalle de un producto por su identificador.
-* `POST /api/productos`: Crea un nuevo producto (Requiere rol `Administrador`).
-* `PUT /api/productos/{id}`: Actualiza un producto existente (Requiere rol `Administrador`).
-* `DELETE /api/productos/{id}`: Elimina un producto (Requiere rol `Administrador`).
+#### 🚘 Vehículos (`/api/vehiculos`)
+* `GET /api/vehiculos`: Catálogo de vehículos disponibles (filtros por marca, modelo, estado).
+* `GET /api/vehiculos/{id}`: Detalle técnico de un vehículo (VIN, placa, kilometraje, tarifa de renta, precio de venta).
+* `POST /api/vehiculos`: Registra un nuevo vehículo al inventario (`Administrador`).
+* `PUT /api/vehiculos/{id}`: Actualiza los datos de un vehículo (`Administrador`).
+* `DELETE /api/vehiculos/{id}`: Da de baja un vehículo (`Administrador`).
 
-#### 👥 Clientes (`/api/clientes`)
-* `GET /api/clientes`: Listado de clientes (Requiere rol `Administrador`).
-* `GET /api/clientes/{id}`: Detalle de cliente por ID.
-* `POST /api/clientes`: Crea un cliente con validación de edad (18-120 años).
-* `PUT /api/clientes/{id}`: Modifica datos de un cliente.
-* `DELETE /api/clientes/{id}`: Elimina un cliente.
+#### 🏷️ Venta de Vehículos (`/api/ventasvehiculos`)
+* `GET /api/ventasvehiculos`: Historial de ventas de vehículos.
+* `POST /api/ventasvehiculos`: Registra la venta de un auto, asociando cliente, vendedor, precio final y cambiando el estado del vehículo a "Vendido".
 
-#### 🛒 Ventas (`/api/ventas`)
-* `GET /api/ventas`: Historial de ventas con sus clientes y productos incluidos.
-* `GET /api/ventas/{id}`: Detalle completo de una venta.
-* `POST /api/ventas`: Registra una nueva venta con:
-  * Validación de stock acumulado por producto (previene stock negativo).
+#### ⏱️ Rentas y Alquiler de Autos (`/api/rentas`)
+* `GET /api/rentas`: Historial de contratos de renta.
+* `GET /api/rentas/{id}`: Detalle de renta por ID.
+* `POST /api/rentas`: Registra una nueva renta calculando días, tarifa diaria, depósito de garantía y marcando el vehículo como "Rentado".
+* `PUT /api/rentas/{id}/finalizar`: Finaliza la renta, calcula posibles cargos adicionales y vuelve a poner el vehículo en estado "Disponible".
+
+#### 🔧 Repuestos y Autopartes (`/api/productos`)
+* `GET /api/productos`: Catálogo de repuestos con soporte para búsqueda (`?buscar=pastillas`) y filtro por categoría (`?categoria=Frenos`).
+* `GET /api/productos/{id}`: Detalle de un repuesto específico.
+* `POST /api/productos`: Crea un nuevo repuesto en inventario (`Administrador`).
+* `PUT /api/productos/{id}`: Actualiza precio, descripción o datos del repuesto (`Administrador`).
+* `DELETE /api/productos/{id}`: Elimina un repuesto (`Administrador`).
+
+#### 🛒 Ventas de Repuestos (`/api/ventas`)
+* `GET /api/ventas`: Historial de ventas de repuestos.
+* `POST /api/ventas`: Procesa una venta de repuestos con:
+  * Validación de stock acumulado por repuesto.
   * Descuento automático de inventario.
   * Cálculo contable de Subtotal e IVA (19%).
   * Generación automática del recibo PDF en `wwwroot/recibos/`.
-  * Envío de correo de confirmación de compra al cliente.
-* `DELETE /api/ventas/{id}`: Elimina una venta (Requiere rol `Administrador`).
+  * Envío de confirmación de compra por correo electrónico.
+
+#### 👥 Clientes (`/api/clientes`)
+* `GET /api/clientes`: Listado de clientes (`Administrador`).
+* `GET /api/clientes/{id}`: Consulta de cliente por ID.
+* `POST /api/clientes`: Crea un cliente con validación de edad (18 a 120 años).
+* `PUT /api/clientes/{id}`: Modifica los datos de un cliente.
+* `DELETE /api/clientes/{id}`: Elimina un cliente.
+
+#### 📊 Exportación Masiva (`/api/exportacion`)
+* `GET /api/exportacion/vehiculos/excel` y `/pdf`: Exporta el inventario de vehículos.
+* `GET /api/exportacion/productos/excel` y `/pdf`: Exporta el listado de repuestos.
+* `GET /api/exportacion/clientes/excel` y `/pdf`: Exporta la base de clientes.
+* `GET /api/exportacion/ventas/excel` y `/pdf`: Exporta las ventas de repuestos.
+* `GET /api/exportacion/ventas-vehiculos/excel` y `/pdf`: Exporta las ventas de vehículos.
+* `GET /api/exportacion/rentas/excel` y `/pdf`: Exporta los contratos de renta.
 
 ---
 
@@ -112,25 +142,24 @@ Las dependencias fluyen en una sola dirección hacia el dominio, desacoplando co
 
 1. Ejecuta el proyecto `Firmeza.Api`:
    ```bash
-   cd src/Firmeza.Api
-   dotnet run
+   dotnet run --project src/Firmeza.Api
    ```
 2. Abre en tu navegador la URL de Swagger:
    ```text
-   http://localhost:5000/swagger   (o el puerto asignado por la consola)
+   http://localhost:5200/swagger   (o el puerto que indique la consola)
    ```
 3. **Para probar endpoints protegidos:**
    * Haz una petición en `POST /api/auth/login` con el usuario administrador inicial:
      * **Email:** `admin@firmeza.com`
      * **Password:** `Admin123$`
-   * Copia el valor de `"token"` recibido en la respuesta JSON.
+   * Copia el valor del `"token"` recibido en la respuesta JSON.
    * Haz clic en el botón verde **Authorize** (candado 🔓) en la parte superior derecha de Swagger.
    * Pega el token y presiona **Authorize**.
    * ¡Listo! Ahora todos los endpoints con autorización funcionarán directamente desde Swagger.
 
 ---
 
-## 📧 Configuración del servicio de correo (SMTP Gmail)
+## 📧 Configuración de Correo (SMTP Gmail)
 
 En `src/Firmeza.Api/appsettings.json`:
 
@@ -139,7 +168,7 @@ En `src/Firmeza.Api/appsettings.json`:
   "Host": "smtp.gmail.com",
   "Port": 587,
   "SenderEmail": "tu_correo@gmail.com",
-  "SenderName": "Firmeza Materiales",
+  "SenderName": "Firmeza Concesionario",
   "Password": "TU_CONTRASENA_DE_APLICACION_GMAIL",
   "EnableSsl": true
 }
@@ -149,33 +178,39 @@ En `src/Firmeza.Api/appsettings.json`:
 
 ---
 
-## 🧪 Pruebas unitarias
+## 🧪 Pruebas Unitarias
 
-El proyecto cuenta con **26 pruebas unitarias automatizadas** usando **xUnit**:
+El proyecto cuenta con **26 pruebas unitarias automatizadas** pasando en verde usando **xUnit**:
 
 ```bash
-cd src/Firmeza.Tests
-dotnet test
+dotnet test src/Firmeza.Tests
 ```
 
 ### Módulos probados:
 * **`EdadValidatorTests` (18 tests):** Validación de edad mínima (18) y máxima (120), valores nulos, texto no numérico y desbordamientos.
 * **`VentaTests` (3 tests):** Cálculo exacto de IVA (19%), Subtotal, Total y descuento de inventario.
-* **`MappingProfileTests` (4 tests):** Inicialización y validación de AutoMapper para DTOs de Productos, Clientes y Ventas.
+* **`MappingProfileTests` (4 tests):** Inicialización y validación de AutoMapper para DTOs de Vehículos, Repuestos, Clientes y Ventas.
 * **`SmtpEmailServiceTests` (1 test):** Resiliencia y manejo de fallback en el servicio de correo.
 
 ---
 
-## 🐳 Despliegue con Docker
+## 🐳 Despliegue con Docker y Base de Datos
 
+### Con Docker Compose (PostgreSQL local):
 Crea un archivo `.env` en la raíz con la contraseña de PostgreSQL:
 ```bash
 echo "DB_PASSWORD=TU_CLAVE" > .env
 ```
-
 Levanta los contenedores:
 ```bash
 docker compose up -d --build
 ```
 * **PostgreSQL:** `localhost:5432`
 * **Panel Web:** `http://localhost:8080`
+
+### Con Supabase (PostgreSQL en la nube):
+Para conectar el backend con Supabase, simplemente actualiza la cadena de conexión en `src/Firmeza.Api/appsettings.json`:
+```json
+"DefaultConnection": "Host=TU_HOST_SUPABASE;Port=5432;Database=postgres;Username=TU_USUARIO;Password=TU_PASSWORD;SSL Mode=Require;Trust Server Certificate=true"
+```
+Al iniciar `Firmeza.Api`, Entity Framework Core ejecutará automáticamente las migraciones y sembrará los roles, usuario admin, vehículos y repuestos iniciales.
