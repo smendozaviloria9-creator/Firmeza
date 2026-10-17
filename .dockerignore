@@ -1,0 +1,9 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+firmeza-frontend/node_modules
+firmeza-frontend/.angular
+firmeza-frontend/dist
+*.log
