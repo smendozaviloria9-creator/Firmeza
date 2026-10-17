@@ -55,7 +55,7 @@ public class VehiculosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<ActionResult<VehiculoDto>> Create(VehiculoCreateDto dto)
     {
         if (await _context.Vehiculos.AnyAsync(v => v.Placa == dto.Placa))
@@ -72,7 +72,7 @@ public class VehiculosController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<IActionResult> Update(int id, VehiculoUpdateDto dto)
     {
         var vehiculo = await _context.Vehiculos.FindAsync(id);
@@ -89,7 +89,7 @@ public class VehiculosController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<IActionResult> Delete(int id)
     {
         var vehiculo = await _context.Vehiculos.FindAsync(id);

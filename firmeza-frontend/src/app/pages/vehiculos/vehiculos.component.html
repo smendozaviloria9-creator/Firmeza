@@ -1,10 +1,13 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h2 class="fw-bold text-dark mb-1">
       <i class="bi bi-car-front text-warning me-2"></i>Catálogo de Vehículos
     </h2>
     <p class="text-muted mb-0">Explora nuestra flota de autos para venta y renta por día.</p>
   </div>
+  <button class="btn btn-warning fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrear()">
+    <i class="bi bi-plus-circle me-1"></i> Añadir Vehículo
+  </button>
 </div>
 
 @if (mensajeAccion()) {
@@ -16,9 +19,10 @@
 }
 
 @if (mensajeError()) {
-  <div class="alert alert-danger shadow-sm" role="alert">
+  <div class="alert alert-danger shadow-sm alert-dismissible fade show" role="alert">
     <i class="bi bi-exclamation-triangle-fill me-2"></i>
     {{ mensajeError() }}
+    <button type="button" class="btn-close" (click)="mensajeError.set(null)"></button>
   </div>
 }
 
@@ -44,6 +48,8 @@
           <option value="SUV">SUV</option>
           <option value="Sedán">Sedán</option>
           <option value="Camioneta">Camioneta</option>
+          <option value="Hatchback">Hatchback</option>
+          <option value="Deportivo">Deportivo</option>
         </select>
       </div>
       <div class="col-md-3">
@@ -76,7 +82,7 @@
   <div class="text-center py-5 bg-white rounded-3 shadow-sm p-4">
     <i class="bi bi-car-front fs-1 text-muted"></i>
     <h5 class="fw-bold mt-2">No se encontraron vehículos</h5>
-    <p class="text-muted small">Intenta cambiando los términos de búsqueda o filtros.</p>
+    <p class="text-muted small">Intenta cambiando los términos de búsqueda o añade uno nuevo.</p>
   </div>
 } @else {
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
@@ -88,13 +94,26 @@
               <h5 class="fw-bold mb-0">{{ auto.marca }} {{ auto.modelo }}</h5>
               <small class="text-white-50">{{ auto.tipo }} · Año {{ auto.anio }}</small>
             </div>
-            @if (auto.estado === 'Disponible') {
-              <span class="badge bg-success">Disponible</span>
-            } @else if (auto.estado === 'Rentado') {
-              <span class="badge bg-warning text-dark">Rentado</span>
-            } @else {
-              <span class="badge bg-danger">Vendido</span>
-            }
+            <div class="d-flex align-items-center gap-2">
+              @if (auto.estado === 'Disponible') {
+                <span class="badge bg-success">Disponible</span>
+              } @else if (auto.estado === 'Rentado') {
+                <span class="badge bg-warning text-dark">Rentado</span>
+              } @else {
+                <span class="badge bg-danger">Vendido</span>
+              }
+
+              @if (authService.isAuthenticated()) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-light border-0 py-0 px-1 text-danger-emphasis"
+                  (click)="eliminarVehiculo(auto.id, auto.placa)"
+                  title="Dar de baja"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              }
+            </div>
           </div>
 
           <div class="card-body">
@@ -152,5 +171,189 @@
         </div>
       </div>
     }
+  </div>
+}
+
+<!-- Modal para Añadir Vehículo -->
+@if (mostrarModalCrear()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.55);" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-car-front-fill text-warning me-2"></i>Añadir Nuevo Vehículo
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="cerrarModalCrear()"></button>
+        </div>
+
+        <form (ngSubmit)="guardarVehiculo()">
+          <div class="modal-body p-4">
+            @if (!authService.isAuthenticated()) {
+              <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                <div>
+                  Para guardar debes estar autenticado.
+                  <a routerLink="/login" (click)="cerrarModalCrear()" class="fw-bold text-dark text-decoration-underline ms-1">
+                    Inicia sesión aquí
+                  </a>
+                  con tu cuenta o como administrador.
+                </div>
+              </div>
+            }
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Marca *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: Toyota, Ford, Mazda"
+                  required
+                  name="marca"
+                  [(ngModel)]="nuevoVehiculo.marca"
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Modelo *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: Corolla Cross, Ranger 4x4"
+                  required
+                  name="modelo"
+                  [(ngModel)]="nuevoVehiculo.modelo"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Año *</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  min="1990"
+                  max="2030"
+                  required
+                  name="anio"
+                  [(ngModel)]="nuevoVehiculo.anio"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Placa *</label>
+                <input
+                  type="text"
+                  class="form-control text-uppercase"
+                  placeholder="Ej: ABC-123"
+                  required
+                  name="placa"
+                  [(ngModel)]="nuevoVehiculo.placa"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Tipo de Carrocería</label>
+                <select class="form-select" name="tipo" [(ngModel)]="nuevoVehiculo.tipo">
+                  <option value="SUV">SUV</option>
+                  <option value="Sedán">Sedán</option>
+                  <option value="Camioneta">Camioneta</option>
+                  <option value="Hatchback">Hatchback</option>
+                  <option value="Deportivo">Deportivo</option>
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Color</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: Blanco Perla, Gris"
+                  name="color"
+                  [(ngModel)]="nuevoVehiculo.color"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Kilometraje (km)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  min="0"
+                  name="kilometraje"
+                  [(ngModel)]="nuevoVehiculo.kilometraje"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Estado Inicial</label>
+                <select class="form-select" name="estado" [(ngModel)]="nuevoVehiculo.estado">
+                  <option value="Disponible">Disponible</option>
+                  <option value="Rentado">Rentado</option>
+                  <option value="Vendido">Vendido</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Precio de Venta ($COP) *</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    min="0"
+                    step="500000"
+                    required
+                    name="precioVenta"
+                    [(ngModel)]="nuevoVehiculo.precioVenta"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Tarifa Renta por Día ($COP) *</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    min="0"
+                    step="10000"
+                    required
+                    name="precioRentaDia"
+                    [(ngModel)]="nuevoVehiculo.precioRentaDia"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label fw-semibold">Número VIN / Chasis (Opcional)</label>
+                <input
+                  type="text"
+                  class="form-control text-uppercase"
+                  placeholder="Ej: 9BWCA45X1FP000000"
+                  name="vin"
+                  [(ngModel)]="nuevoVehiculo.vin"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" (click)="cerrarModalCrear()">Cancelar</button>
+            <button
+              type="submit"
+              class="btn btn-warning fw-semibold px-4"
+              [disabled]="guardando() || !authService.isAuthenticated()"
+            >
+              @if (guardando()) {
+                <span class="spinner-border spinner-border-sm me-1"></span> Guardando...
+              } @else {
+                <i class="bi bi-check-circle me-1"></i> Guardar Vehículo
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 }

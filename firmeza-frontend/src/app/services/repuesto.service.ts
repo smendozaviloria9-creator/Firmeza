@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Repuesto } from '../models/repuesto.models';
+import { Repuesto, RepuestoCreate } from '../models/repuesto.models';
 
 @Injectable({
   providedIn: 'root'
@@ -21,5 +21,13 @@ export class RepuestoService {
 
   getRepuestoById(id: number): Observable<Repuesto> {
     return this.http.get<Repuesto>(`${this.baseUrl}/${id}`);
+  }
+
+  crearRepuesto(repuesto: RepuestoCreate): Observable<Repuesto> {
+    return this.http.post<Repuesto>(this.baseUrl, repuesto);
+  }
+
+  eliminarRepuesto(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

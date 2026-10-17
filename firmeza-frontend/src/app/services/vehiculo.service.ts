@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Vehiculo } from '../models/vehiculo.models';
+import { Vehiculo, VehiculoCreate } from '../models/vehiculo.models';
 
 @Injectable({
   providedIn: 'root'
@@ -22,5 +22,13 @@ export class VehiculoService {
 
   getVehiculoById(id: number): Observable<Vehiculo> {
     return this.http.get<Vehiculo>(`${this.baseUrl}/${id}`);
+  }
+
+  crearVehiculo(vehiculo: VehiculoCreate): Observable<Vehiculo> {
+    return this.http.post<Vehiculo>(this.baseUrl, vehiculo);
+  }
+
+  eliminarVehiculo(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

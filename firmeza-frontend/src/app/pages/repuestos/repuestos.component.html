@@ -1,24 +1,28 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h2 class="fw-bold text-dark mb-1">
       <i class="bi bi-tools text-warning me-2"></i>Catálogo de Repuestos y Autopartes
     </h2>
     <p class="text-muted mb-0">Repuestos originales y garantizados para el mantenimiento de tu vehículo.</p>
   </div>
+  <button class="btn btn-warning fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrear()">
+    <i class="bi bi-plus-circle me-1"></i> Añadir Repuesto
+  </button>
 </div>
 
 @if (mensajeCarrito()) {
   <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-    <i class="bi bi-cart-check-fill me-2"></i>
+    <i class="bi bi-check-circle-fill me-2"></i>
     {{ mensajeCarrito() }}
     <button type="button" class="btn-close" (click)="mensajeCarrito.set(null)"></button>
   </div>
 }
 
 @if (mensajeError()) {
-  <div class="alert alert-danger shadow-sm" role="alert">
+  <div class="alert alert-danger shadow-sm alert-dismissible fade show" role="alert">
     <i class="bi bi-exclamation-triangle-fill me-2"></i>
     {{ mensajeError() }}
+    <button type="button" class="btn-close" (click)="mensajeError.set(null)"></button>
   </div>
 }
 
@@ -47,6 +51,7 @@
           <option value="Suspensión">Suspensión</option>
           <option value="Transmisión">Transmisión</option>
           <option value="Encendido">Encendido</option>
+          <option value="Accesorios">Accesorios</option>
         </select>
       </div>
       <div class="col-md-2 d-flex gap-2">
@@ -71,7 +76,7 @@
   <div class="text-center py-5 bg-white rounded-3 shadow-sm p-4">
     <i class="bi bi-box-seam fs-1 text-muted"></i>
     <h5 class="fw-bold mt-2">No se encontraron repuestos</h5>
-    <p class="text-muted small">Prueba cambiando la categoría o término de búsqueda.</p>
+    <p class="text-muted small">Prueba cambiando la categoría o añade un nuevo repuesto al inventario.</p>
   </div>
 } @else {
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
@@ -80,7 +85,19 @@
         <div class="card h-100 shadow-sm border-0">
           <div class="card-header bg-white border-bottom-0 pt-3 d-flex justify-content-between align-items-center">
             <span class="badge bg-dark">{{ item.categoria }}</span>
-            <small class="text-muted">Unidad: {{ item.unidadMedida }}</small>
+            <div class="d-flex align-items-center gap-2">
+              <small class="text-muted">Unidad: {{ item.unidadMedida }}</small>
+              @if (authService.isAuthenticated()) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger border-0 py-0 px-1"
+                  (click)="eliminarRepuesto(item.id, item.nombre)"
+                  title="Eliminar repuesto"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              }
+            </div>
           </div>
 
           <div class="card-body">
@@ -128,5 +145,130 @@
         </div>
       </div>
     }
+  </div>
+}
+
+<!-- Modal para Añadir Repuesto -->
+@if (mostrarModalCrear()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.55);" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-tools text-warning me-2"></i>Añadir Nuevo Repuesto / Autoparte
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="cerrarModalCrear()"></button>
+        </div>
+
+        <form (ngSubmit)="guardarRepuesto()">
+          <div class="modal-body p-4">
+            @if (!authService.isAuthenticated()) {
+              <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                <div>
+                  Para registrar repuestos debes estar autenticado.
+                  <a routerLink="/login" (click)="cerrarModalCrear()" class="fw-bold text-dark text-decoration-underline ms-1">
+                    Inicia sesión aquí
+                  </a>
+                  con tu cuenta o como administrador.
+                </div>
+              </div>
+            }
+
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label fw-semibold">Nombre del Repuesto *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: Pastillas de Freno Cerámicas, Filtro de Aire"
+                  required
+                  name="nombre"
+                  [(ngModel)]="nuevoRepuesto.nombre"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Categoría *</label>
+                <select class="form-select" name="categoria" [(ngModel)]="nuevoRepuesto.categoria" required>
+                  <option value="Frenos">Frenos</option>
+                  <option value="Motor">Motor</option>
+                  <option value="Eléctrico">Eléctrico</option>
+                  <option value="Suspensión">Suspensión</option>
+                  <option value="Transmisión">Transmisión</option>
+                  <option value="Encendido">Encendido</option>
+                  <option value="Accesorios">Accesorios</option>
+                </select>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label fw-semibold">Descripción Técnica</label>
+                <textarea
+                  class="form-control"
+                  rows="2"
+                  placeholder="Especificaciones, compatibilidad o detalles de instalación..."
+                  name="descripcion"
+                  [(ngModel)]="nuevoRepuesto.descripcion"
+                ></textarea>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Unidad de Medida</label>
+                <select class="form-select" name="unidadMedida" [(ngModel)]="nuevoRepuesto.unidadMedida">
+                  <option value="unidad">Unidad</option>
+                  <option value="par">Par</option>
+                  <option value="juego">Juego</option>
+                  <option value="kit">Kit</option>
+                  <option value="litro">Litro</option>
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Precio Unitario ($COP) *</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    min="1000"
+                    step="5000"
+                    required
+                    name="precioUnitario"
+                    [(ngModel)]="nuevoRepuesto.precioUnitario"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Stock Inicial *</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  min="0"
+                  required
+                  name="stock"
+                  [(ngModel)]="nuevoRepuesto.stock"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" (click)="cerrarModalCrear()">Cancelar</button>
+            <button
+              type="submit"
+              class="btn btn-warning fw-semibold px-4"
+              [disabled]="guardando() || !authService.isAuthenticated()"
+            >
+              @if (guardando()) {
+                <span class="spinner-border spinner-border-sm me-1"></span> Guardando...
+              } @else {
+                <i class="bi bi-check-circle me-1"></i> Guardar Repuesto
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 }
