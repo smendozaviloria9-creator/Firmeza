@@ -6,7 +6,7 @@ namespace Firmeza.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Administrador")]
+[Authorize]
 public class ExportacionController : ControllerBase
 {
     private const string TipoExcel = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
