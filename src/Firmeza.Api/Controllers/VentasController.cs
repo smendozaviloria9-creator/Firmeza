@@ -142,11 +142,35 @@ public class VentasController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize]
     public async Task<IActionResult> Delete(int id)
     {
-        var venta = await _context.Ventas.FindAsync(id);
+        var venta = await _context.Ventas
+            .Include(v => v.Detalles)
+            .FirstOrDefaultAsync(v => v.Id == id);
+
         if (venta is null) return NotFound();
+
+        // Devolver el stock a cada repuesto / producto
+        foreach (var detalle in venta.Detalles)
+        {
+            var producto = await _context.Productos.FindAsync(detalle.ProductoId);
+            if (producto is not null)
+            {
+                producto.Stock += detalle.Cantidad;
+            }
+        }
+
+        // Eliminar recibo fisico si existe
+        if (!string.IsNullOrEmpty(venta.ReciboArchivo))
+        {
+            var carpetaRecibos = Path.Combine(_env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot"), "recibos");
+            var rutaArchivo = Path.Combine(carpetaRecibos, venta.ReciboArchivo);
+            if (System.IO.File.Exists(rutaArchivo))
+            {
+                System.IO.File.Delete(rutaArchivo);
+            }
+        }
 
         _context.Ventas.Remove(venta);
         await _context.SaveChangesAsync();
