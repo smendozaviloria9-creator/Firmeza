@@ -196,21 +196,23 @@ dotnet test src/Firmeza.Tests
 
 ## 🐳 Despliegue con Docker y Base de Datos
 
-### Con Docker Compose (PostgreSQL local):
-Crea un archivo `.env` en la raíz con la contraseña de PostgreSQL:
-```bash
-echo "DB_PASSWORD=TU_CLAVE" > .env
-```
-Levanta los contenedores:
-```bash
-docker compose up -d --build
-```
-* **PostgreSQL:** `localhost:5432`
-* **Panel Web:** `http://localhost:8080`
+### Despliegue Orquestado (Semana 5):
 
-### Con Supabase (PostgreSQL en la nube):
-Para conectar el backend con Supabase, simplemente actualiza la cadena de conexión en `src/Firmeza.Api/appsettings.json`:
-```json
-"DefaultConnection": "Host=TU_HOST_SUPABASE;Port=5432;Database=postgres;Username=TU_USUARIO;Password=TU_PASSWORD;SSL Mode=Require;Trust Server Certificate=true"
+El archivo `docker-compose.yml` orquesta todo el ecosistema asegurando **calidad previa**:
+1. **`tests` (Paso obligatorio inicial):** Ejecuta las **26 pruebas automatizadas** de xUnit en un contenedor aislado. Si alguna falla, Docker cancela el despliegue.
+2. **`db` (PostgreSQL 16):** Levanta la base de datos relacional y espera a que esté saludable (`healthcheck`).
+3. **`api` (Firmeza.Api):** Levanta la API REST en modo producción.
+4. **`admin` (Firmeza.Admin / MVC):** Levanta el panel administrativo.
+5. **`client` (Firmeza.Client / Angular):** Compila la SPA y la sirve optimizada mediante **Nginx**.
+
+#### Comando único de despliegue:
+```bash
+docker compose up --build
 ```
-Al iniciar `Firmeza.Api`, Entity Framework Core ejecutará automáticamente las migraciones y sembrará los roles, usuario admin, vehículos y repuestos iniciales.
+
+#### Puertos del sistema:
+* 🌐 **Frontend Cliente (Angular):** `http://localhost:4200`
+* 🔌 **API REST / Swagger:** `http://localhost:5000/swagger` (y `http://localhost:5077`)
+* 🖥️ **Panel Administrativo (Razor):** `http://localhost:8080`
+* 🗄️ **Base de datos (PostgreSQL):** `localhost:5432`
+
