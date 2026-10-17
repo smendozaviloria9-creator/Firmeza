@@ -29,7 +29,7 @@ El ecosistema está compuesto por:
 | **Generación de Reportes / PDF** | QuestPDF |
 | **Pruebas unitarias** | xUnit (26 pruebas automatizadas en verde) |
 | **Empaquetado** | Docker + Docker Compose |
-| **Frontend Cliente** | Angular (Semana 4) |
+| **Frontend Cliente** | Angular 22 (SPA + Bootstrap 5 + JWT Signals) |
 
 ---
 
@@ -175,6 +175,61 @@ En `src/Firmeza.Api/appsettings.json`:
 ```
 
 > **Nota sobre Gmail:** Para enviar correos reales, debes ingresar a tu cuenta de Google → **Seguridad** → **Verificación en 2 pasos** → **Contraseñas de aplicaciones**, generar una clave de 16 letras y colocarla en `Password`. Si se deja el valor por defecto, el servicio simula el envío y registra un log sin fallar.
+
+---
+
+## 🌐 Frontend Cliente — Angular SPA (Semana 4)
+
+El módulo cliente es una **Single Page Application (SPA)** moderna construida con **Angular 22**, desacoplada del backend y comunicada vía HTTP REST con la API de ASP.NET Core.
+
+### ✨ Características implementadas:
+* **Seguridad y JWT:**
+  * Inyección automática del header `Authorization: Bearer <token>` mediante un `HttpInterceptor` funcional (`authInterceptor`).
+  * Manejo reactivo de estado de sesión mediante **Angular Signals** (`currentUser`, `isAuthenticated`, `isAdmin`).
+  * Redirección automática al Login ante respuestas HTTP `401 Unauthorized`.
+  * Protección de rutas con `AuthGuard` funcional (`canActivate`).
+* **Catálogo de Vehículos (`/vehiculos`):**
+  * Visualización en tarjetas responsivas con información detallada (marca, modelo, año, kilometraje, VIN y placa).
+  * Distinción visual de precios de venta y tarifas de renta por día.
+  * Badges de estado dinámico (`Disponible`, `Rentado`, `Vendido`).
+* **Catálogo de Repuestos y Autopartes (`/repuestos`):**
+  * Buscador en tiempo real conectado al backend (`?buscar=`).
+  * Indicador visual de stock (verde para inventario saludable, amarillo para stock crítico $\le 5$).
+  * Especificación de categoría, precio y cálculo de IVA.
+* **Gestión de Ventas (`/ventas`):**
+  * Tabla con el histórico de compras y pedidos registrados.
+  * Desglose financiero: Subtotal, IVA (19%) y Total en pesos colombianos ($COP).
+  * **Exportación masiva:** Botones de descarga directa en formato **Excel** (`.xlsx`) y **PDF** consumiendo los endpoints de exportación mediante `Blob` nativo.
+  * Anulación / eliminación de registros con confirmación modal.
+* **Autenticación y Registro:**
+  * Pantalla de inicio de sesión (`/login`) con mensajes de error contextuales.
+  * Pantalla de registro para nuevos clientes (`/registro`) con validaciones de formulario.
+
+### 🚀 Cómo ejecutar el Frontend:
+
+1. Asegúrate de que la API de backend esté corriendo (en `http://localhost:5000` o `http://localhost:5077`).
+2. Entra a la carpeta del proyecto frontend:
+   ```bash
+   cd firmeza-frontend
+   ```
+3. Instala las dependencias (si no lo has hecho):
+   ```bash
+   npm install
+   ```
+4. Inicia el servidor de desarrollo:
+   ```bash
+   npm start
+   ```
+5. Abre en tu navegador:
+   ```text
+   http://localhost:4200
+   ```
+
+### 👤 Usuarios para pruebas:
+| Rol | Email | Contraseña | Acceso |
+| :--- | :--- | :--- | :--- |
+| **Administrador** | `admin@firmeza.com` | `Admin123$` | Gestión completa, ventas y catálogos |
+| **Cliente** | *(Registrar en `/registro`)* | *(Cualquiera válida)* | Navegación de vehículos y repuestos |
 
 ---
 
