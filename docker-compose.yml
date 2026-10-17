@@ -1,4 +1,12 @@
 services:
+  # 1. Ejecucion de Pruebas Automatizadas (Paso obligatorio inicial)
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    container_name: firmeza_tests
+
+  # 2. Base de Datos Relacional PostgreSQL
   db:
     image: postgres:16
     container_name: firmeza_db
@@ -6,7 +14,7 @@ services:
     environment:
       POSTGRES_DB: firmeza_db
       POSTGRES_USER: firmeza_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1043448063}
     ports:
       - "5432:5432"
     volumes:
@@ -16,36 +24,66 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    depends_on:
+      tests:
+        condition: service_completed_successfully
 
+  # 3. Backend - API RESTful
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.api
     container_name: firmeza_api
     restart: unless-stopped
     depends_on:
+      tests:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     environment:
-      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=firmeza_db;Username=firmeza_user;Password=${DB_PASSWORD}"
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=firmeza_db;Username=firmeza_user;Password=${DB_PASSWORD:-1043448063}"
       ASPNETCORE_ENVIRONMENT: "Production"
+      AdminSeed__Email: "admin@firmeza.com"
+      AdminSeed__Password: "Admin123$"
+      AdminSeed__NombreCompleto: "Administrador Firmeza"
     ports:
       - "5000:8080"
+      - "5077:8080"
 
-  web:
+  # 4. Panel Administrativo (MVC / Razor)
+  admin:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: firmeza_web
+      dockerfile: Dockerfile.web
+    container_name: firmeza_admin
     restart: unless-stopped
     depends_on:
+      tests:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
       db:
         condition: service_healthy
     environment:
-      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=firmeza_db;Username=firmeza_user;Password=${DB_PASSWORD}"
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=firmeza_db;Username=firmeza_user;Password=${DB_PASSWORD:-1043448063}"
       ASPNETCORE_ENVIRONMENT: "Production"
     ports:
       - "8080:8080"
+
+  # 5. Frontend Cliente (SPA Angular con Nginx)
+  client:
+    build:
+      context: ./firmeza-frontend
+      dockerfile: Dockerfile
+    container_name: firmeza_client
+    restart: unless-stopped
+    depends_on:
+      tests:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+    ports:
+      - "4200:80"
 
 volumes:
   firmeza_pgdata:
