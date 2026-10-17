@@ -24,9 +24,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    depends_on:
-      tests:
-        condition: service_completed_successfully
 
   # 3. Backend - API RESTful
   api:
@@ -47,7 +44,6 @@ services:
       AdminSeed__Password: "Admin123$"
       AdminSeed__NombreCompleto: "Administrador Firmeza"
     ports:
-      - "5000:8080"
       - "5077:8080"
 
   # 4. Panel Administrativo (MVC / Razor)
