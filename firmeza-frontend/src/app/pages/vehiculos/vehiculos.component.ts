@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router,RouterLink } from '@angular/router';
 import { VehiculoService } from '../../services/vehiculo.service';
 import { AuthService } from '../../services/auth.service';
 import { Vehiculo, VehiculoCreate } from '../../models/vehiculo.models';
@@ -14,6 +14,7 @@ import { Vehiculo, VehiculoCreate } from '../../models/vehiculo.models';
 })
 export class VehiculosComponent implements OnInit {
   private readonly vehiculoService = inject(VehiculoService);
+  private readonly router = inject(Router);
   readonly authService = inject(AuthService);
 
   vehiculos = signal<Vehiculo[]>([]);
@@ -119,9 +120,13 @@ export class VehiculosComponent implements OnInit {
   }
 
   solicitarVehiculo(vehiculo: Vehiculo, modalidad: 'compra' | 'renta'): void {
-    const accion = modalidad === 'compra' ? 'compra' : 'alquiler/renta';
-    this.mensajeAccion.set(`¡Solicitud de ${accion} registrada para el ${vehiculo.marca} ${vehiculo.modelo} (${vehiculo.placa})!`);
-    setTimeout(() => this.mensajeAccion.set(null), 4000);
+    this.router.navigate(['/ventas'],{
+      queryParams:{
+        tipo: 'vehiculo',
+        id: vehiculo.id,
+        modalidad: modalidad
+      }
+    });
   }
 
   private getVehiculoInicial(): VehiculoCreate {

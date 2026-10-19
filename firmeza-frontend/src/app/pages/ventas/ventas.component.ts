@@ -1,17 +1,38 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {ActivatedRoute, RouterLink} from '@angular/router';
 import { VentaService } from '../../services/venta.service';
-import { Venta } from '../../models/venta.models';
+import { ClienteService } from '../../services/cliente.service';
+import { RepuestoService } from '../../services/repuesto.service';
+import { VehiculoService } from '../../services/vehiculo.service';
+import { AuthService } from '../../services/auth.service';
+import { Venta, VentaCreate, VentaVehiculoCreate } from '../../models/venta.models';
+import { Cliente } from '../../models/cliente.models';
+import { Repuesto } from '../../models/repuesto.models';
+import { Vehiculo } from '../../models/vehiculo.models';
+
+interface ItemVentaRow {
+  productoId: number;
+  cantidad: number;
+  precioUnitario: number;
+  stockMax: number;
+  nombre: string;
+}
 
 @Component({
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, FormsModule],
+  imports: [CurrencyPipe, DatePipe, FormsModule, RouterLink],
   selector: 'app-ventas',
   templateUrl: './ventas.component.html'
 })
 export class VentasComponent implements OnInit {
   private readonly ventaService = inject(VentaService);
+  private readonly clienteService = inject(ClienteService);
+  private readonly repuestoService = inject(RepuestoService);
+  private readonly vehiculoService = inject(VehiculoService);
+  private readonly router = inject(ActivatedRoute)
+  readonly authService = inject(AuthService);
 
   ventas = signal<Venta[]>([]);
   cargando = signal<boolean>(true);
@@ -22,6 +43,25 @@ export class VentasComponent implements OnInit {
   descargandoPdf = signal<boolean>(false);
 
   filtro = '';
+
+  // Modal para Crear Venta
+  mostrarModalVenta = signal<boolean>(false);
+  guardandoVenta = signal<boolean>(false);
+  tipoVenta = signal<'repuestos' | 'vehiculo'>('repuestos');
+
+  clientes = signal<Cliente[]>([]);
+  repuestos = signal<Repuesto[]>([]);
+  vehiculosDisponibles = signal<Vehiculo[]>([]);
+
+  // Datos del formulario - Repuestos
+  clienteId = 0;
+  itemsVenta: ItemVentaRow[] = [];
+
+  // Datos del formulario - Vehículo
+  vehiculoId = 0;
+  vendedor = 'Asesor Firmeza';
+  precioFinalVehiculo = 0;
+  observaciones = 'Venta en concesionario';
 
   // Filtro reactivo en tiempo real
   ventasFiltradas = computed(() => {
@@ -41,6 +81,40 @@ export class VentasComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarVentas();
+
+    this.router.queryParams.subscribe(params => {
+      const tipo = params['tipo'];
+      const id = Number(params['id']);
+
+      if (tipo === 'repuesto' && id) {
+        this.abrirConRepuesto(id);
+      } else if (tipo === 'vehiculo' && id) {
+        this.abrirConVehiculo(id);
+      }
+    });
+  }
+  abrirConRepuesto(repuestoId: number): void {
+    this.abrirModalCrear('repuestos');
+    setTimeout(() => {
+      const rep = this.repuestos().find(r => r.id === repuestoId);
+      if (rep) {
+        this.itemsVenta = [{
+          productoId: rep.id,
+          cantidad: 1,
+          precioUnitario: rep.precioUnitario,
+          stockMax: rep.stock,
+          nombre: rep.nombre
+        }];
+      }
+    }, 300);
+  }
+
+  abrirConVehiculo(vehiculoId: number): void {
+    this.abrirModalCrear('vehiculo');
+    setTimeout(() => {
+      this.vehiculoId = vehiculoId;
+      this.onVehiculoChange();
+    }, 300);
   }
 
   cargarVentas(): void {
@@ -57,6 +131,180 @@ export class VentasComponent implements OnInit {
         this.mensajeError.set('Error al cargar el historial de ventas.');
       }
     });
+  }
+
+  abrirModalCrear(tipo: 'repuestos' | 'vehiculo' = 'repuestos'): void {
+    this.tipoVenta.set(tipo);
+    this.mensajeError.set(null);
+
+    // Cargar clientes
+    this.clienteService.getClientes().subscribe({
+      next: (data) => {
+        this.clientes.set(data);
+        if (data.length > 0 && !this.clienteId) {
+          this.clienteId = data[0].id;
+        }
+      }
+    });
+
+    // Cargar repuestos con stock disponible
+    this.repuestoService.getRepuestos().subscribe({
+      next: (data) => {
+        const disponibles = data.filter(r => r.stock > 0);
+        this.repuestos.set(disponibles);
+        this.itemsVenta = [];
+        if (disponibles.length > 0) {
+          this.agregarFilaItem();
+        }
+      }
+    });
+
+    // Cargar vehículos disponibles para la venta
+    this.vehiculoService.getVehiculos(undefined, undefined, 'Disponible').subscribe({
+      next: (data) => {
+        this.vehiculosDisponibles.set(data);
+        if (data.length > 0) {
+          this.vehiculoId = data[0].id;
+          this.precioFinalVehiculo = data[0].precioVenta;
+        }
+      }
+    });
+
+    this.mostrarModalVenta.set(true);
+  }
+
+  cerrarModalCrear(): void {
+    this.mostrarModalVenta.set(false);
+  }
+
+  agregarFilaItem(): void {
+    const lista = this.repuestos();
+    if (lista.length === 0) return;
+
+    // Buscar el primer repuesto que aún no esté en la lista o el primero disponible
+    const rep = lista[0];
+    this.itemsVenta.push({
+      productoId: rep.id,
+      cantidad: 1,
+      precioUnitario: rep.precioUnitario,
+      stockMax: rep.stock,
+      nombre: rep.nombre
+    });
+  }
+
+  eliminarFilaItem(index: number): void {
+    if (this.itemsVenta.length > 1) {
+      this.itemsVenta.splice(index, 1);
+    }
+  }
+
+  onProductoChange(item: ItemVentaRow): void {
+    const rep = this.repuestos().find(r => r.id === +item.productoId);
+    if (rep) {
+      item.precioUnitario = rep.precioUnitario;
+      item.stockMax = rep.stock;
+      item.nombre = rep.nombre;
+      if (item.cantidad > rep.stock) {
+        item.cantidad = rep.stock;
+      }
+    }
+  }
+
+  onVehiculoChange(): void {
+    const auto = this.vehiculosDisponibles().find(v => v.id === +this.vehiculoId);
+    if (auto) {
+      this.precioFinalVehiculo = auto.precioVenta;
+    }
+  }
+
+  getSubtotal(): number {
+    return this.itemsVenta.reduce((acc, i) => acc + ((i.cantidad || 0) * (i.precioUnitario || 0)), 0);
+  }
+
+  getIva(): number {
+    return Math.round(this.getSubtotal() * 0.19);
+  }
+
+  getTotal(): number {
+    return this.getSubtotal() + this.getIva();
+  }
+
+  guardarVenta(): void {
+    if (!this.authService.isAuthenticated()) {
+      this.mensajeError.set('Debes iniciar sesión para registrar una venta.');
+      return;
+    }
+
+    if (!this.clienteId) {
+      this.mensajeError.set('Debes seleccionar un cliente.');
+      return;
+    }
+
+    this.guardandoVenta.set(true);
+    this.mensajeError.set(null);
+
+    if (this.tipoVenta() === 'repuestos') {
+      if (this.itemsVenta.length === 0) {
+        this.mensajeError.set('Debes agregar al menos un repuesto a la orden.');
+        this.guardandoVenta.set(false);
+        return;
+      }
+
+      const payload: VentaCreate = {
+        clienteId: +this.clienteId,
+        fecha: new Date().toISOString(),
+        items: this.itemsVenta.map(i => ({
+          productoId: +i.productoId,
+          cantidad: +i.cantidad
+        }))
+      };
+
+      this.ventaService.crearVenta(payload).subscribe({
+        next: (creada) => {
+          this.guardandoVenta.set(false);
+          this.mostrarModalVenta.set(false);
+          this.mensajeExito.set(`¡Venta #${creada.id} registrada con éxito! Total facturado: $${creada.total.toLocaleString('es-CO')} COP.`);
+          this.cargarVentas();
+          setTimeout(() => this.mensajeExito.set(null), 5000);
+        },
+        error: (err) => {
+          this.guardandoVenta.set(false);
+          const detalle = err.error?.mensaje || 'Error al procesar la venta. Verifica el stock disponible.';
+          this.mensajeError.set(detalle);
+        }
+      });
+    } else {
+      // Venta de Vehículo
+      if (!this.vehiculoId || this.precioFinalVehiculo <= 0) {
+        this.mensajeError.set('Debes seleccionar un vehículo válido con su precio final.');
+        this.guardandoVenta.set(false);
+        return;
+      }
+
+      const payload: VentaVehiculoCreate = {
+        clienteId: +this.clienteId,
+        vehiculoId: +this.vehiculoId,
+        vendedor: this.vendedor || 'Asesor Firmeza',
+        fecha: new Date().toISOString(),
+        precioFinal: +this.precioFinalVehiculo,
+        observaciones: this.observaciones
+      };
+
+      this.ventaService.crearVentaVehiculo(payload).subscribe({
+        next: () => {
+          this.guardandoVenta.set(false);
+          this.mostrarModalVenta.set(false);
+          this.mensajeExito.set('¡Venta de vehículo registrada con éxito! El vehículo ahora figura como Vendido.');
+          this.cargarVentas();
+          setTimeout(() => this.mensajeExito.set(null), 5000);
+        },
+        error: (err) => {
+          this.guardandoVenta.set(false);
+          const detalle = err.error?.mensaje || 'Error al registrar la venta del vehículo.';
+          this.mensajeError.set(detalle);
+        }
+      });
+    }
   }
 
   eliminarVenta(id: number): void {

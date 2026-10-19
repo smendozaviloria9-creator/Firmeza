@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { RepuestoService } from '../../services/repuesto.service';
 import { AuthService } from '../../services/auth.service';
 import { Repuesto, RepuestoCreate } from '../../models/repuesto.models';
@@ -14,6 +14,7 @@ import { Repuesto, RepuestoCreate } from '../../models/repuesto.models';
 })
 export class RepuestosComponent implements OnInit {
   private readonly repuestoService = inject(RepuestoService);
+  private readonly router = inject(Router);
   readonly authService = inject(AuthService);
 
   repuestos = signal<Repuesto[]>([]);
@@ -116,9 +117,14 @@ export class RepuestosComponent implements OnInit {
     });
   }
 
+
   agregarAlCarrito(repuesto: Repuesto): void {
-    this.mensajeCarrito.set(`¡Se añadió "${repuesto.nombre}" al pedido!`);
-    setTimeout(() => this.mensajeCarrito.set(null), 3500);
+    this.router.navigate(['/ventas'], {
+      queryParams: {
+        tipo: 'repuesto',
+        id: repuesto.id
+      }
+    });
   }
 
   private getRepuestoInicial(): RepuestoCreate {
