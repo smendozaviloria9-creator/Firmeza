@@ -1,9 +1,17 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h2 class="fw-bold text-dark mb-1">
       <i class="bi bi-receipt text-warning me-2"></i>Gestión y Reporte de Ventas
     </h2>
     <p class="text-muted mb-0">Historial de órdenes, emisión de comprobantes y exportación de reportes.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <button class="btn btn-warning fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrear('repuestos')">
+      <i class="bi bi-cart-plus me-1"></i> Registrar Venta de Repuestos
+    </button>
+    <button class="btn btn-dark fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrear('vehiculo')">
+      <i class="bi bi-car-front me-1"></i> Venta de Vehículo
+    </button>
   </div>
 </div>
 
@@ -16,9 +24,10 @@
 }
 
 @if (mensajeError()) {
-  <div class="alert alert-danger shadow-sm" role="alert">
+  <div class="alert alert-danger shadow-sm alert-dismissible fade show" role="alert">
     <i class="bi bi-exclamation-triangle-fill me-2"></i>
     {{ mensajeError() }}
+    <button type="button" class="btn-close" (click)="mensajeError.set(null)"></button>
   </div>
 }
 
@@ -61,8 +70,7 @@
           />
         </div>
       </div>
-
-      <div class="col-md-7 d-flex justify-content-md-end gap-2">
+      <div class="col-md-7 d-flex gap-2 justify-content-md-end flex-wrap">
         <!-- Botón Exportar Excel -->
         <button
           class="btn btn-success fw-semibold"
@@ -160,6 +168,259 @@
           }
         </tbody>
       </table>
+    </div>
+  </div>
+}
+
+<!-- Modal para Registrar Venta -->
+@if (mostrarModalVenta()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.55);" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-cart-check-fill text-warning me-2"></i>Registrar Nueva Venta
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="cerrarModalCrear()"></button>
+        </div>
+
+        <form (ngSubmit)="guardarVenta()">
+          <div class="modal-body p-4">
+            @if (!authService.isAuthenticated()) {
+              <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                <div>
+                  Para procesar ventas debes estar autenticado.
+                  <a routerLink="/login" (click)="cerrarModalCrear()" class="fw-bold text-dark text-decoration-underline ms-1">
+                    Inicia sesión aquí
+                  </a>
+                  con tu cuenta o como administrador.
+                </div>
+              </div>
+            }
+
+            <!-- Selector de tipo de venta -->
+            <ul class="nav nav-pills mb-4 nav-fill">
+              <li class="nav-item">
+                <button
+                  type="button"
+                  class="nav-link"
+                  [class.active]="tipoVenta() === 'repuestos'"
+                  (click)="tipoVenta.set('repuestos')"
+                >
+                  <i class="bi bi-tools me-1"></i> Venta de Repuestos / Autopartes
+                </button>
+              </li>
+              <li class="nav-item">
+                <button
+                  type="button"
+                  class="nav-link"
+                  [class.active]="tipoVenta() === 'vehiculo'"
+                  (click)="tipoVenta.set('vehiculo')"
+                >
+                  <i class="bi bi-car-front me-1"></i> Venta de Vehículo
+                </button>
+              </li>
+            </ul>
+
+            <!-- Selector de Cliente Común -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Cliente Comprador *</label>
+              @if (clientes().length === 0) {
+                <div class="alert alert-info py-2 small mb-0">
+                  <i class="bi bi-info-circle me-1"></i> Cargando clientes registrados...
+                </div>
+              } @else {
+                <select class="form-select" [(ngModel)]="clienteId" name="clienteId" required>
+                  @for (c of clientes(); track c.id) {
+                    <option [value]="c.id">
+                      {{ c.nombres }} {{ c.apellidos }} (Doc: {{ c.documento }})
+                    </option>
+                  }
+                </select>
+              }
+            </div>
+
+            <!-- MODO 1: VENTA DE REPUESTOS -->
+            @if (tipoVenta() === 'repuestos') {
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label fw-semibold mb-0">Repuestos a Incluir en la Venta *</label>
+                  <button
+                    type="button"
+                    class="btn btn-outline-warning btn-sm fw-semibold"
+                    (click)="agregarFilaItem()"
+                    [disabled]="repuestos().length === 0"
+                  >
+                    <i class="bi bi-plus me-1"></i> Añadir otro repuesto
+                  </button>
+                </div>
+
+                @if (repuestos().length === 0) {
+                  <div class="alert alert-warning small">
+                    <i class="bi bi-exclamation-circle me-1"></i> No hay repuestos con stock disponible en este momento.
+                  </div>
+                } @else {
+                  <div class="table-responsive border rounded mb-3 bg-white">
+                    <table class="table table-sm align-middle mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th style="width: 50%;">Repuesto</th>
+                          <th style="width: 20%;">Cantidad</th>
+                          <th style="width: 20%;" class="text-end">Subtotal</th>
+                          <th style="width: 10%;" class="text-center"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of itemsVenta; track $index) {
+                          <tr>
+                            <td>
+                              <select
+                                class="form-select form-select-sm"
+                                [(ngModel)]="item.productoId"
+                                [name]="'prod_' + $index"
+                                (change)="onProductoChange(item)"
+                              >
+                                @for (rep of repuestos(); track rep.id) {
+                                  <option [value]="rep.id">
+                                    {{ rep.nombre }} (Stock: {{ rep.stock }}) - {{ rep.precioUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}
+                                  </option>
+                                }
+                              </select>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control form-control-sm"
+                                min="1"
+                                [max]="item.stockMax"
+                                [(ngModel)]="item.cantidad"
+                                [name]="'cant_' + $index"
+                              />
+                            </td>
+                            <td class="text-end fw-semibold">
+                              {{ (item.cantidad * item.precioUnitario) | currency:'COP':'symbol-narrow':'1.0-0' }}
+                            </td>
+                            <td class="text-center">
+                              @if (itemsVenta.length > 1) {
+                                <button
+                                  type="button"
+                                  class="btn btn-outline-danger btn-sm border-0"
+                                  (click)="eliminarFilaItem($index)"
+                                  title="Quitar"
+                                >
+                                  <i class="bi bi-x-circle"></i>
+                                </button>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Resumen Financiero -->
+                  <div class="card bg-light border-0 p-3">
+                    <div class="d-flex justify-content-between mb-1 small">
+                      <span class="text-muted">Subtotal:</span>
+                      <span class="fw-semibold">{{ getSubtotal() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 small">
+                      <span class="text-muted">IVA (19%):</span>
+                      <span class="fw-semibold">{{ getIva() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-top pt-2">
+                      <span class="fw-bold fs-5 text-dark">Total a Facturar:</span>
+                      <span class="fw-bold fs-5 text-success">{{ getTotal() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- MODO 2: VENTA DE VEHÍCULO -->
+            @if (tipoVenta() === 'vehiculo') {
+              <div class="row g-3">
+                <div class="col-md-12">
+                  <label class="form-label fw-semibold">Vehículo Disponible *</label>
+                  @if (vehiculosDisponibles().length === 0) {
+                    <div class="alert alert-warning small">
+                      <i class="bi bi-exclamation-circle me-1"></i> No hay vehículos con estado "Disponible" para la venta.
+                    </div>
+                  } @else {
+                    <select
+                      class="form-select"
+                      [(ngModel)]="vehiculoId"
+                      name="vehiculoId"
+                      (change)="onVehiculoChange()"
+                      required
+                    >
+                      @for (auto of vehiculosDisponibles(); track auto.id) {
+                        <option [value]="auto.id">
+                          {{ auto.marca }} {{ auto.modelo }} ({{ auto.placa }}) · Año {{ auto.anio }} - Precio: {{ auto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                        </option>
+                      }
+                    </select>
+                  }
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Precio Final Acordado ($COP) *</label>
+                  <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input
+                      type="number"
+                      class="form-control"
+                      min="1000000"
+                      step="500000"
+                      required
+                      name="precioFinalVehiculo"
+                      [(ngModel)]="precioFinalVehiculo"
+                    />
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Asesor / Vendedor</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Nombre del asesor"
+                    name="vendedor"
+                    [(ngModel)]="vendedor"
+                  />
+                </div>
+
+                <div class="col-md-12">
+                  <label class="form-label fw-semibold">Observaciones de la Venta</label>
+                  <textarea
+                    class="form-control"
+                    rows="2"
+                    placeholder="Condiciones de entrega, garantía o método de pago..."
+                    name="observaciones"
+                    [(ngModel)]="observaciones"
+                  ></textarea>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" (click)="cerrarModalCrear()">Cancelar</button>
+            <button
+              type="submit"
+              class="btn btn-warning fw-semibold px-4"
+              [disabled]="guardandoVenta() || !authService.isAuthenticated()"
+            >
+              @if (guardandoVenta()) {
+                <span class="spinner-border spinner-border-sm me-1"></span> Procesando Venta...
+              } @else {
+                <i class="bi bi-check-circle me-1"></i> Confirmar y Registrar Venta
+              }
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 }

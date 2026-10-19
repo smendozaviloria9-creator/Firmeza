@@ -18,3 +18,23 @@ export interface Venta {
   reciboArchivo?: string;
   detalles: DetalleVenta[];
 }
+
+export interface DetalleVentaCreate {
+  productoId: number;
+  cantidad: number;
+}
+
+export interface VentaCreate {
+  clienteId: number;
+  fecha: string;
+  items: DetalleVentaCreate[];
+}
+
+export interface VentaVehiculoCreate {
+  vehiculoId: number;
+  clienteId: number;
+  vendedor: string;
+  fecha: string;
+  precioFinal: number;
+  observaciones?: string;
+}
