@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {ActivatedRoute, RouterLink} from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { VentaService } from '../../services/venta.service';
 import { ClienteService } from '../../services/cliente.service';
 import { RepuestoService } from '../../services/repuesto.service';
@@ -31,7 +31,6 @@ export class VentasComponent implements OnInit {
   private readonly clienteService = inject(ClienteService);
   private readonly repuestoService = inject(RepuestoService);
   private readonly vehiculoService = inject(VehiculoService);
-  private readonly router = inject(ActivatedRoute)
   readonly authService = inject(AuthService);
 
   ventas = signal<Venta[]>([]);
@@ -81,40 +80,6 @@ export class VentasComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarVentas();
-
-    this.router.queryParams.subscribe(params => {
-      const tipo = params['tipo'];
-      const id = Number(params['id']);
-
-      if (tipo === 'repuesto' && id) {
-        this.abrirConRepuesto(id);
-      } else if (tipo === 'vehiculo' && id) {
-        this.abrirConVehiculo(id);
-      }
-    });
-  }
-  abrirConRepuesto(repuestoId: number): void {
-    this.abrirModalCrear('repuestos');
-    setTimeout(() => {
-      const rep = this.repuestos().find(r => r.id === repuestoId);
-      if (rep) {
-        this.itemsVenta = [{
-          productoId: rep.id,
-          cantidad: 1,
-          precioUnitario: rep.precioUnitario,
-          stockMax: rep.stock,
-          nombre: rep.nombre
-        }];
-      }
-    }, 300);
-  }
-
-  abrirConVehiculo(vehiculoId: number): void {
-    this.abrirModalCrear('vehiculo');
-    setTimeout(() => {
-      this.vehiculoId = vehiculoId;
-      this.onVehiculoChange();
-    }, 300);
   }
 
   cargarVentas(): void {
