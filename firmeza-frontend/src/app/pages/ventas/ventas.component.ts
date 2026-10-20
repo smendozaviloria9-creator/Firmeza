@@ -8,7 +8,7 @@ import { RepuestoService } from '../../services/repuesto.service';
 import { VehiculoService } from '../../services/vehiculo.service';
 import { AuthService } from '../../services/auth.service';
 import { Venta, VentaCreate, VentaVehiculoCreate } from '../../models/venta.models';
-import { Cliente } from '../../models/cliente.models';
+import { Cliente, ClienteCreate } from '../../models/cliente.models';
 import { Repuesto } from '../../models/repuesto.models';
 import { Vehiculo } from '../../models/vehiculo.models';
 
@@ -52,6 +52,12 @@ export class VentasComponent implements OnInit {
   clientes = signal<Cliente[]>([]);
   repuestos = signal<Repuesto[]>([]);
   vehiculosDisponibles = signal<Vehiculo[]>([]);
+
+  // Estado para Registrar Nuevo Cliente directamente desde la Venta
+  mostrarFormNuevoCliente = signal<boolean>(false);
+  guardandoCliente = signal<boolean>(false);
+  mensajeErrorCliente = signal<string | null>(null);
+  nuevoCliente: ClienteCreate = this.getClienteInicial();
 
   // Datos del formulario - Repuestos
   clienteId = 0;
@@ -174,8 +180,79 @@ export class VentasComponent implements OnInit {
     this.mostrarModalVenta.set(true);
   }
 
+  abrirModalCrearClienteDirecto(): void {
+    this.abrirModalCrear('repuestos');
+    this.mostrarFormNuevoCliente.set(true);
+  }
+
   cerrarModalCrear(): void {
     this.mostrarModalVenta.set(false);
+    this.mostrarFormNuevoCliente.set(false);
+    this.mensajeErrorCliente.set(null);
+  }
+
+  getClienteInicial(): ClienteCreate {
+    return {
+      nombres: '',
+      apellidos: '',
+      documento: '',
+      correo: '',
+      telefono: '',
+      direccion: '',
+      edad: 18
+    };
+  }
+
+  toggleFormNuevoCliente(): void {
+    this.mostrarFormNuevoCliente.update(v => !v);
+    this.mensajeErrorCliente.set(null);
+    if (this.mostrarFormNuevoCliente()) {
+      this.nuevoCliente = this.getClienteInicial();
+    }
+  }
+
+  guardarNuevoCliente(): void {
+    if (!this.nuevoCliente.nombres?.trim() || !this.nuevoCliente.apellidos?.trim()) {
+      this.mensajeErrorCliente.set('Ingresa nombres y apellidos válidos.');
+      return;
+    }
+    if (!this.nuevoCliente.documento?.trim()) {
+      this.mensajeErrorCliente.set('El número de documento es obligatorio.');
+      return;
+    }
+    if (!this.nuevoCliente.correo?.trim() || !this.nuevoCliente.correo.includes('@')) {
+      this.mensajeErrorCliente.set('Ingresa un correo electrónico válido.');
+      return;
+    }
+    if (!this.nuevoCliente.telefono?.trim()) {
+      this.mensajeErrorCliente.set('El teléfono de contacto es obligatorio.');
+      return;
+    }
+    if (!this.nuevoCliente.edad || this.nuevoCliente.edad < 18 || this.nuevoCliente.edad > 120) {
+      this.mensajeErrorCliente.set('La edad debe estar comprendida entre 18 y 120 años.');
+      return;
+    }
+
+    this.guardandoCliente.set(true);
+    this.mensajeErrorCliente.set(null);
+
+    this.clienteService.crearCliente(this.nuevoCliente).subscribe({
+      next: (creado) => {
+        this.guardandoCliente.set(false);
+        // Agregar a la lista reactiva de clientes
+        this.clientes.update(lista => [...lista, creado]);
+        // Preseleccionar el nuevo cliente para la venta en curso
+        this.clienteId = creado.id;
+        // Cerrar formulario y limpiar
+        this.mostrarFormNuevoCliente.set(false);
+        this.nuevoCliente = this.getClienteInicial();
+      },
+      error: (err) => {
+        this.guardandoCliente.set(false);
+        const msg = err.error?.mensaje || 'Error al registrar el cliente. Verifica si el documento o correo ya existen.';
+        this.mensajeErrorCliente.set(msg);
+      }
+    });
   }
 
   agregarFilaItem(): void {

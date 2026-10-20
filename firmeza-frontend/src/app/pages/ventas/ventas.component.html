@@ -6,6 +6,9 @@
     <p class="text-muted mb-0">Historial de órdenes, emisión de comprobantes y exportación de reportes.</p>
   </div>
   <div class="d-flex gap-2 flex-wrap">
+    <button class="btn btn-primary fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrearClienteDirecto()">
+      <i class="bi bi-person-plus-fill me-1"></i> + Añadir Cliente
+    </button>
     <button class="btn btn-warning fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrear('repuestos')">
       <i class="bi bi-cart-plus me-1"></i> Registrar Venta de Repuestos
     </button>
@@ -223,12 +226,151 @@
               </li>
             </ul>
 
-            <!-- Selector de Cliente Común -->
+            <!-- Selector de Cliente Común y Registro de Nuevo Cliente -->
             <div class="mb-4">
-              <label class="form-label fw-semibold">Cliente Comprador *</label>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-semibold mb-0">Cliente Comprador *</label>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [class.btn-outline-primary]="!mostrarFormNuevoCliente()"
+                  [class.btn-outline-secondary]="mostrarFormNuevoCliente()"
+                  (click)="toggleFormNuevoCliente()"
+                >
+                  @if (!mostrarFormNuevoCliente()) {
+                    <i class="bi bi-person-plus-fill me-1"></i> + Añadir Nuevo Cliente
+                  } @else {
+                    <i class="bi bi-x-circle me-1"></i> Cancelar registro
+                  }
+                </button>
+              </div>
+
+              <!-- Formulario Desplegable para Registrar Nuevo Cliente -->
+              @if (mostrarFormNuevoCliente()) {
+                <div class="card border-primary border-opacity-25 bg-light shadow-sm mb-3">
+                  <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2 text-primary fw-bold">
+                      <i class="bi bi-person-badge-fill me-2 fs-5"></i>
+                      <span>Registrar Nuevo Cliente</span>
+                    </div>
+
+                    @if (mensajeErrorCliente()) {
+                      <div class="alert alert-danger py-2 px-3 small mb-2 d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span>{{ mensajeErrorCliente() }}</span>
+                      </div>
+                    }
+
+                    <div class="row g-2">
+                      <div class="col-md-6">
+                        <label class="form-label small fw-semibold mb-1">Nombres *</label>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          placeholder="Ej: Carlos Andrés"
+                          [(ngModel)]="nuevoCliente.nombres"
+                          name="nuevoNombres"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label small fw-semibold mb-1">Apellidos *</label>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          placeholder="Ej: Pérez Gómez"
+                          [(ngModel)]="nuevoCliente.apellidos"
+                          name="nuevoApellidos"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small fw-semibold mb-1">Documento (C.C / NIT) *</label>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          placeholder="Ej: 1045236789"
+                          [(ngModel)]="nuevoCliente.documento"
+                          name="nuevoDocumento"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small fw-semibold mb-1">Correo Electrónico *</label>
+                        <input
+                          type="email"
+                          class="form-control form-control-sm"
+                          placeholder="cliente@ejemplo.com"
+                          [(ngModel)]="nuevoCliente.correo"
+                          name="nuevoCorreo"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small fw-semibold mb-1">Teléfono *</label>
+                        <input
+                          type="tel"
+                          class="form-control form-control-sm"
+                          placeholder="Ej: 3001234567"
+                          [(ngModel)]="nuevoCliente.telefono"
+                          name="nuevoTelefono"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label small fw-semibold mb-1">Edad * (Mín. 18)</label>
+                        <input
+                          type="number"
+                          class="form-control form-control-sm"
+                          min="18"
+                          max="120"
+                          [(ngModel)]="nuevoCliente.edad"
+                          name="nuevoEdad"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-9">
+                        <label class="form-label small fw-semibold mb-1">Dirección (Opcional)</label>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          placeholder="Ej: Cra 45 # 72 - 15, Barranquilla"
+                          [(ngModel)]="nuevoCliente.direccion"
+                          name="nuevoDireccion"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="mt-3 d-flex justify-content-end gap-2">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        (click)="toggleFormNuevoCliente()"
+                        [disabled]="guardandoCliente()"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-primary fw-semibold"
+                        (click)="guardarNuevoCliente()"
+                        [disabled]="guardandoCliente()"
+                      >
+                        @if (guardandoCliente()) {
+                          <span class="spinner-border spinner-border-sm me-1"></span> Guardando...
+                        } @else {
+                          <i class="bi bi-check-circle-fill me-1"></i> Guardar y Seleccionar
+                        }
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Selector de Clientes -->
               @if (clientes().length === 0) {
                 <div class="alert alert-info py-2 small mb-0">
-                  <i class="bi bi-info-circle me-1"></i> Cargando clientes registrados...
+                  <i class="bi bi-info-circle me-1"></i> No hay clientes registrados aún. ¡Usa el botón "+ Añadir Nuevo Cliente" para crear uno!
                 </div>
               } @else {
                 <select class="form-select" [(ngModel)]="clienteId" name="clienteId" required>
@@ -238,6 +380,9 @@
                     </option>
                   }
                 </select>
+                <div class="form-text small text-muted">
+                  Facturación a nombre del cliente seleccionado.
+                </div>
               }
             </div>
 
