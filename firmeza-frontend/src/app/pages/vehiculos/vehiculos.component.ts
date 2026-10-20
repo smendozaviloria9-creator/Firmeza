@@ -23,8 +23,10 @@ export class VehiculosComponent implements OnInit {
   mensajeError = signal<string | null>(null);
   mensajeAccion = signal<string | null>(null);
 
-  // Modal para agregar vehículo
+  // Modal para agregar o editar vehículo
   mostrarModalCrear = signal<boolean>(false);
+  modoEdicion = signal<boolean>(false);
+  vehiculoIdEnEdicion = signal<number | null>(null);
 
   // Filtros
   buscar = '';
@@ -62,18 +64,42 @@ export class VehiculosComponent implements OnInit {
   }
 
   abrirModalCrear(): void {
+    this.modoEdicion.set(false);
+    this.vehiculoIdEnEdicion.set(null);
     this.nuevoVehiculo = this.getVehiculoInicial();
+    this.mensajeError.set(null);
+    this.mostrarModalCrear.set(true);
+  }
+
+  abrirModalEditar(auto: Vehiculo): void {
+    this.modoEdicion.set(true);
+    this.vehiculoIdEnEdicion.set(auto.id);
+    this.nuevoVehiculo = {
+      marca: auto.marca,
+      modelo: auto.modelo,
+      anio: auto.anio,
+      placa: auto.placa,
+      vin: auto.vin || '',
+      color: auto.color || '',
+      tipo: auto.tipo,
+      kilometraje: auto.kilometraje,
+      precioVenta: auto.precioVenta,
+      precioRentaDia: auto.precioRentaDia,
+      estado: auto.estado
+    };
     this.mensajeError.set(null);
     this.mostrarModalCrear.set(true);
   }
 
   cerrarModalCrear(): void {
     this.mostrarModalCrear.set(false);
+    this.modoEdicion.set(false);
+    this.vehiculoIdEnEdicion.set(null);
   }
 
   guardarVehiculo(): void {
     if (!this.authService.isAuthenticated()) {
-      this.mensajeError.set('Debes iniciar sesión para registrar un vehículo.');
+      this.mensajeError.set('Debes iniciar sesión para registrar o editar un vehículo.');
       return;
     }
 
@@ -85,20 +111,39 @@ export class VehiculosComponent implements OnInit {
     this.guardando.set(true);
     this.mensajeError.set(null);
 
-    this.vehiculoService.crearVehiculo(this.nuevoVehiculo).subscribe({
-      next: (creado) => {
-        this.guardando.set(false);
-        this.mostrarModalCrear.set(false);
-        this.mensajeAccion.set(`¡Vehículo ${creado.marca} ${creado.modelo} (${creado.placa}) registrado con éxito!`);
-        this.cargarVehiculos();
-        setTimeout(() => this.mensajeAccion.set(null), 4000);
-      },
-      error: (err) => {
-        this.guardando.set(false);
-        const detalle = err.error?.mensaje || 'Error al guardar el vehículo. Verifica los datos.';
-        this.mensajeError.set(detalle);
-      }
-    });
+    if (this.modoEdicion() && this.vehiculoIdEnEdicion()) {
+      // Modo Actualización / Edición
+      this.vehiculoService.actualizarVehiculo(this.vehiculoIdEnEdicion()!, this.nuevoVehiculo).subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.mostrarModalCrear.set(false);
+          this.mensajeAccion.set(`¡Vehículo ${this.nuevoVehiculo.marca} ${this.nuevoVehiculo.modelo} (${this.nuevoVehiculo.placa}) actualizado correctamente!`);
+          this.cargarVehiculos();
+          setTimeout(() => this.mensajeAccion.set(null), 4000);
+        },
+        error: (err) => {
+          this.guardando.set(false);
+          const detalle = err.error?.mensaje || 'Error al actualizar el vehículo. Verifica los datos.';
+          this.mensajeError.set(detalle);
+        }
+      });
+    } else {
+      // Modo Creación
+      this.vehiculoService.crearVehiculo(this.nuevoVehiculo).subscribe({
+        next: (creado) => {
+          this.guardando.set(false);
+          this.mostrarModalCrear.set(false);
+          this.mensajeAccion.set(`¡Vehículo ${creado.marca} ${creado.modelo} (${creado.placa}) registrado con éxito!`);
+          this.cargarVehiculos();
+          setTimeout(() => this.mensajeAccion.set(null), 4000);
+        },
+        error: (err) => {
+          this.guardando.set(false);
+          const detalle = err.error?.mensaje || 'Error al guardar el vehículo. Verifica los datos.';
+          this.mensajeError.set(detalle);
+        }
+      });
+    }
   }
 
   eliminarVehiculo(id: number, placa: string): void {

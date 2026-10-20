@@ -28,6 +28,10 @@ export class VehiculoService {
     return this.http.post<Vehiculo>(this.baseUrl, vehiculo);
   }
 
+  actualizarVehiculo(id: number, vehiculo: VehiculoCreate): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/${id}`, vehiculo);
+  }
+
   eliminarVehiculo(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }

@@ -99,11 +99,21 @@
                 <span class="badge bg-success">Disponible</span>
               } @else if (auto.estado === 'Rentado') {
                 <span class="badge bg-warning text-dark">Rentado</span>
+              } @else if (auto.estado === 'En Mantenimiento') {
+                <span class="badge bg-info text-dark">En Taller</span>
               } @else {
                 <span class="badge bg-danger">Vendido</span>
               }
 
               @if (authService.isAuthenticated()) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-light border-0 py-0 px-1 text-warning"
+                  (click)="abrirModalEditar(auto)"
+                  title="Editar vehículo y kilometraje"
+                >
+                  <i class="bi bi-pencil-square"></i>
+                </button>
                 <button
                   type="button"
                   class="btn btn-sm btn-outline-light border-0 py-0 px-1 text-danger-emphasis"
@@ -162,9 +172,13 @@
                   <i class="bi bi-cart-check me-1"></i> Comprar
                 </button>
               </div>
+            } @else if (auto.estado === 'En Mantenimiento') {
+              <button class="btn btn-outline-info btn-sm w-100 fw-semibold" disabled>
+                <i class="bi bi-wrench-adjustable me-1"></i> En Mantenimiento Técnico
+              </button>
             } @else {
               <button class="btn btn-secondary btn-sm w-100" disabled>
-                No disponible actualmente
+                {{ auto.estado === 'Rentado' ? 'Vehículo Rentado' : 'Vehículo Vendido' }}
               </button>
             }
           </div>
@@ -181,7 +195,8 @@
       <div class="modal-content border-0 shadow-lg">
         <div class="modal-header bg-dark text-white">
           <h5 class="modal-title fw-bold">
-            <i class="bi bi-car-front-fill text-warning me-2"></i>Añadir Nuevo Vehículo
+            <i class="bi bi-car-front-fill text-warning me-2"></i>
+            {{ modoEdicion() ? 'Editar Vehículo y Kilometraje' : 'Añadir Nuevo Vehículo' }}
           </h5>
           <button type="button" class="btn-close btn-close-white" (click)="cerrarModalCrear()"></button>
         </div>
@@ -285,11 +300,12 @@
               </div>
 
               <div class="col-md-4">
-                <label class="form-label fw-semibold">Estado Inicial</label>
+                <label class="form-label fw-semibold">Estado del Vehículo</label>
                 <select class="form-select" name="estado" [(ngModel)]="nuevoVehiculo.estado">
                   <option value="Disponible">Disponible</option>
                   <option value="Rentado">Rentado</option>
                   <option value="Vendido">Vendido</option>
+                  <option value="En Mantenimiento">En Mantenimiento (Taller)</option>
                 </select>
               </div>
 
@@ -348,7 +364,7 @@
               @if (guardando()) {
                 <span class="spinner-border spinner-border-sm me-1"></span> Guardando...
               } @else {
-                <i class="bi bi-check-circle me-1"></i> Guardar Vehículo
+                <i class="bi bi-check-circle me-1"></i> {{ modoEdicion() ? 'Actualizar Vehículo' : 'Guardar Vehículo' }}
               }
             </button>
           </div>
