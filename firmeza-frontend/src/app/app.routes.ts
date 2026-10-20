@@ -4,6 +4,7 @@ import { RegistroComponent } from './pages/registro/registro.component';
 import { VehiculosComponent } from './pages/vehiculos/vehiculos.component';
 import { RepuestosComponent } from './pages/repuestos/repuestos.component';
 import { VentasComponent } from './pages/ventas/ventas.component';
+import { ClientesComponent } from './pages/clientes/clientes.component';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -13,5 +14,6 @@ export const routes: Routes = [
   { path: 'vehiculos', component: VehiculosComponent, canActivate: [authGuard] },
   { path: 'repuestos', component: RepuestosComponent, canActivate: [authGuard] },
   { path: 'ventas', component: VentasComponent, canActivate: [authGuard] },
+  { path: 'clientes', component: ClientesComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: '/vehiculos' }
 ];

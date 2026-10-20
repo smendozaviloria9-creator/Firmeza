@@ -1,13 +1,13 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { VentaService } from '../../services/venta.service';
 import { ClienteService } from '../../services/cliente.service';
 import { RepuestoService } from '../../services/repuesto.service';
 import { VehiculoService } from '../../services/vehiculo.service';
 import { AuthService } from '../../services/auth.service';
-import { Venta, VentaCreate, VentaVehiculoCreate } from '../../models/venta.models';
+import { Venta, VentaCreate, VentaVehiculo, VentaVehiculoCreate } from '../../models/venta.models';
 import { Cliente, ClienteCreate } from '../../models/cliente.models';
 import { Repuesto } from '../../models/repuesto.models';
 import { Vehiculo } from '../../models/vehiculo.models';
@@ -32,9 +32,14 @@ export class VentasComponent implements OnInit {
   private readonly repuestoService = inject(RepuestoService);
   private readonly vehiculoService = inject(VehiculoService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly authService = inject(AuthService);
 
+  // Pestaña activa en la vista
+  pestanaActiva = signal<'repuestos' | 'vehiculos' | 'clientes'>('repuestos');
+
   ventas = signal<Venta[]>([]);
+  ventasVehiculos = signal<VentaVehiculo[]>([]);
   cargando = signal<boolean>(true);
   mensajeExito = signal<string | null>(null);
   mensajeError = signal<string | null>(null);
@@ -69,7 +74,7 @@ export class VentasComponent implements OnInit {
   precioFinalVehiculo = 0;
   observaciones = 'Venta en concesionario';
 
-  // Filtro reactivo en tiempo real
+  // Filtro reactivo para ventas de repuestos
   ventasFiltradas = computed(() => {
     const termino = this.filtro.trim().toLowerCase();
     if (!termino) return this.ventas();
@@ -77,13 +82,41 @@ export class VentasComponent implements OnInit {
     return this.ventas().filter(v =>
       v.id.toString().includes(termino) ||
       (v.clienteNombre && v.clienteNombre.toLowerCase().includes(termino)) ||
-      v.detalles.some(d => d.productoNombre.toLowerCase().includes(termino))
+      (v.detalles && v.detalles.some(d => d.productoNombre.toLowerCase().includes(termino)))
+    );
+  });
+
+  // Filtro reactivo para ventas de vehículos
+  ventasVehiculosFiltradas = computed(() => {
+    const termino = this.filtro.trim().toLowerCase();
+    if (!termino) return this.ventasVehiculos();
+
+    return this.ventasVehiculos().filter(v =>
+      v.id.toString().includes(termino) ||
+      (v.clienteNombre && v.clienteNombre.toLowerCase().includes(termino)) ||
+      (v.vehiculoDescripcion && v.vehiculoDescripcion.toLowerCase().includes(termino))
+    );
+  });
+
+  // Filtro reactivo para clientes en pestaña de clientes
+  clientesFiltrados = computed(() => {
+    const termino = this.filtro.trim().toLowerCase();
+    if (!termino) return this.clientes();
+
+    return this.clientes().filter(c =>
+      c.nombres.toLowerCase().includes(termino) ||
+      c.apellidos.toLowerCase().includes(termino) ||
+      c.documento.toLowerCase().includes(termino) ||
+      c.correo.toLowerCase().includes(termino) ||
+      c.telefono.toLowerCase().includes(termino)
     );
   });
 
   // Métricas calculadas para las tarjetas superiores
-  totalFacturado = computed(() => this.ventas().reduce((acc, v) => acc + v.total, 0));
-  totalVentasCount = computed(() => this.ventas().length);
+  totalFacturadoRepuestos = computed(() => this.ventas().reduce((acc, v) => acc + (v.total || 0), 0));
+  totalFacturadoVehiculos = computed(() => this.ventasVehiculos().reduce((acc, v) => acc + (v.total || 0), 0));
+  totalFacturado = computed(() => this.totalFacturadoRepuestos() + this.totalFacturadoVehiculos());
+  totalVentasCount = computed(() => this.ventas().length + this.ventasVehiculos().length);
 
   ngOnInit(): void {
     this.cargarVentas();
@@ -94,12 +127,15 @@ export class VentasComponent implements OnInit {
       const id = Number(params['id']);
 
       if (tipo === 'repuesto' && id) {
+        this.pestanaActiva.set('repuestos');
         this.abrirConRepuesto(id);
       } else if (tipo === 'vehiculo' && id) {
+        this.pestanaActiva.set('vehiculos');
         this.abrirConVehiculo(id);
       }
     });
   }
+
   abrirConRepuesto(repuestoId: number): void {
     this.abrirModalCrear('repuestos');
     setTimeout(() => {
@@ -128,6 +164,7 @@ export class VentasComponent implements OnInit {
     this.cargando.set(true);
     this.mensajeError.set(null);
 
+    // 1. Cargar ventas de repuestos
     this.ventaService.getVentas().subscribe({
       next: (data) => {
         this.ventas.set(data);
@@ -135,7 +172,24 @@ export class VentasComponent implements OnInit {
       },
       error: () => {
         this.cargando.set(false);
-        this.mensajeError.set('Error al cargar el historial de ventas.');
+        this.mensajeError.set('Error al cargar ventas de repuestos.');
+      }
+    });
+
+    // 2. Cargar ventas de vehículos
+    this.ventaService.getVentasVehiculos().subscribe({
+      next: (data) => {
+        this.ventasVehiculos.set(data);
+      },
+      error: () => {
+        this.ventasVehiculos.set([]);
+      }
+    });
+
+    // 3. Cargar clientes
+    this.clienteService.getClientes().subscribe({
+      next: (data) => {
+        this.clientes.set(data);
       }
     });
   }
@@ -342,6 +396,8 @@ export class VentasComponent implements OnInit {
           this.guardandoVenta.set(false);
           this.mostrarModalVenta.set(false);
           this.mensajeExito.set(`¡Venta #${creada.id} registrada con éxito! Total facturado: $${creada.total.toLocaleString('es-CO')} COP.`);
+          this.pestanaActiva.set('repuestos');
+          this.limpiarQueryParams();
           this.cargarVentas();
           setTimeout(() => this.mensajeExito.set(null), 5000);
         },
@@ -373,6 +429,8 @@ export class VentasComponent implements OnInit {
           this.guardandoVenta.set(false);
           this.mostrarModalVenta.set(false);
           this.mensajeExito.set('¡Venta de vehículo registrada con éxito! El vehículo ahora figura como Vendido.');
+          this.pestanaActiva.set('vehiculos');
+          this.limpiarQueryParams();
           this.cargarVentas();
           setTimeout(() => this.mensajeExito.set(null), 5000);
         },
@@ -400,6 +458,27 @@ export class VentasComponent implements OnInit {
         this.mensajeError.set(`No se pudo eliminar la venta N° ${id}.`);
       }
     });
+  }
+
+  eliminarVentaVehiculo(id: number): void {
+    if (!confirm(`¿Estás seguro de que deseas anular la venta de vehículo N° ${id}? El vehículo volverá a estar Disponible.`)) {
+      return;
+    }
+
+    this.ventaService.eliminarVentaVehiculo(id).subscribe({
+      next: () => {
+        this.mensajeExito.set(`Venta de vehículo N° ${id} anulada. El vehículo vuelve a figurar como Disponible.`);
+        this.cargarVentas();
+        setTimeout(() => this.mensajeExito.set(null), 4000);
+      },
+      error: () => {
+        this.mensajeError.set(`No se pudo anular la venta de vehículo N° ${id}.`);
+      }
+    });
+  }
+
+  limpiarQueryParams(): void {
+    this.router.navigate([], { queryParams: {} });
   }
 
   exportarExcel(): void {

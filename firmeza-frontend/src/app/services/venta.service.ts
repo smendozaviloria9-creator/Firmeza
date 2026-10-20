@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Venta, VentaCreate, VentaVehiculoCreate } from '../models/venta.models';
+import { Venta, VentaCreate, VentaVehiculo, VentaVehiculoCreate } from '../models/venta.models';
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +10,7 @@ import { Venta, VentaCreate, VentaVehiculoCreate } from '../models/venta.models'
 export class VentaService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/ventas`;
+  private readonly vehiculosUrl = `${environment.apiUrl}/ventas-vehiculos`;
   private readonly exportUrl = `${environment.apiUrl}/exportacion`;
 
   // Listar ventas de repuestos
@@ -22,14 +23,24 @@ export class VentaService {
     return this.http.post<Venta>(this.baseUrl, venta);
   }
 
-  // Registrar nueva venta de vehículo
-  crearVentaVehiculo(venta: VentaVehiculoCreate): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/ventas-vehiculos`, venta);
+  // Listar ventas de vehículos
+  getVentasVehiculos(): Observable<VentaVehiculo[]> {
+    return this.http.get<VentaVehiculo[]>(this.vehiculosUrl);
   }
 
-  // Eliminar venta
+  // Registrar nueva venta de vehículo
+  crearVentaVehiculo(venta: VentaVehiculoCreate): Observable<VentaVehiculo> {
+    return this.http.post<VentaVehiculo>(this.vehiculosUrl, venta);
+  }
+
+  // Eliminar venta de repuestos
   eliminarVenta(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  // Eliminar venta de vehículo (devuelve vehículo a Disponible)
+  eliminarVentaVehiculo(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.vehiculosUrl}/${id}`);
   }
 
   // Descargar reporte Excel

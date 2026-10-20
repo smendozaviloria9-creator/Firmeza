@@ -19,4 +19,8 @@ export class ClienteService {
   crearCliente(cliente: ClienteCreate): Observable<Cliente> {
     return this.http.post<Cliente>(this.baseUrl, cliente);
   }
+
+  eliminarCliente(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 }

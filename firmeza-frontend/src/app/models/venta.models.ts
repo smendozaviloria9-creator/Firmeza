@@ -38,3 +38,16 @@ export interface VentaVehiculoCreate {
   precioFinal: number;
   observaciones?: string;
 }
+
+export interface VentaVehiculo {
+  id: number;
+  clienteId: number;
+  clienteNombre: string;
+  vehiculoId: number;
+  vehiculoDescripcion: string;
+  fecha: string;
+  subtotal: number;
+  iva: number;
+  total: number;
+  reciboArchivo?: string;
+}

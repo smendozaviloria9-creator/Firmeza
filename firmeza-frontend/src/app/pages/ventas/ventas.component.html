@@ -36,27 +36,87 @@
 
 <!-- Tarjetas de Resumen KPI -->
 <div class="row g-3 mb-4">
-  <div class="col-md-6 col-lg-4">
+  <div class="col-md-6 col-lg-3">
     <div class="card shadow-sm border-0 border-start border-warning border-4">
       <div class="card-body">
-        <span class="text-muted small fw-semibold text-uppercase">Total Facturado</span>
-        <h3 class="fw-bold text-dark mt-1 mb-0">
+        <span class="text-muted small fw-semibold text-uppercase">Facturado Global</span>
+        <h4 class="fw-bold text-dark mt-1 mb-0">
           {{ totalFacturado() | currency:'COP':'symbol-narrow':'1.0-0' }}
-        </h3>
+        </h4>
       </div>
     </div>
   </div>
-  <div class="col-md-6 col-lg-4">
+  <div class="col-md-6 col-lg-3">
+    <div class="card shadow-sm border-0 border-start border-success border-4">
+      <div class="card-body">
+        <span class="text-muted small fw-semibold text-uppercase">Ventas Vehículos</span>
+        <h4 class="fw-bold text-dark mt-1 mb-0">
+          {{ totalFacturadoVehiculos() | currency:'COP':'symbol-narrow':'1.0-0' }}
+        </h4>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-3">
+    <div class="card shadow-sm border-0 border-start border-info border-4">
+      <div class="card-body">
+        <span class="text-muted small fw-semibold text-uppercase">Ventas Repuestos</span>
+        <h4 class="fw-bold text-dark mt-1 mb-0">
+          {{ totalFacturadoRepuestos() | currency:'COP':'symbol-narrow':'1.0-0' }}
+        </h4>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-3">
     <div class="card shadow-sm border-0 border-start border-primary border-4">
       <div class="card-body">
-        <span class="text-muted small fw-semibold text-uppercase">Total de Órdenes</span>
-        <h3 class="fw-bold text-dark mt-1 mb-0">
+        <span class="text-muted small fw-semibold text-uppercase">Total Órdenes</span>
+        <h4 class="fw-bold text-dark mt-1 mb-0">
           {{ totalVentasCount() }} órdenes
-        </h3>
+        </h4>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Pestañas de Navegación: Repuestos vs Vehículos vs Clientes -->
+<ul class="nav nav-pills mb-3 gap-2">
+  <li class="nav-item">
+    <button
+      class="nav-link fw-semibold"
+      [class.active]="pestanaActiva() === 'repuestos'"
+      (click)="pestanaActiva.set('repuestos')"
+    >
+      <i class="bi bi-tools me-1"></i> Ventas de Repuestos
+      <span class="badge ms-1" [class.bg-light]="pestanaActiva() === 'repuestos'" [class.text-dark]="pestanaActiva() === 'repuestos'" [class.bg-secondary]="pestanaActiva() !== 'repuestos'">
+        {{ ventas().length }}
+      </span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button
+      class="nav-link fw-semibold"
+      [class.active]="pestanaActiva() === 'vehiculos'"
+      (click)="pestanaActiva.set('vehiculos')"
+    >
+      <i class="bi bi-car-front-fill me-1"></i> Ventas de Vehículos
+      <span class="badge ms-1" [class.bg-light]="pestanaActiva() === 'vehiculos'" [class.text-dark]="pestanaActiva() === 'vehiculos'" [class.bg-secondary]="pestanaActiva() !== 'vehiculos'">
+        {{ ventasVehiculos().length }}
+      </span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button
+      class="nav-link fw-semibold"
+      [class.active]="pestanaActiva() === 'clientes'"
+      (click)="pestanaActiva.set('clientes')"
+    >
+      <i class="bi bi-people-fill me-1"></i> Clientes / Usuarios Registrados
+      <span class="badge ms-1" [class.bg-light]="pestanaActiva() === 'clientes'" [class.text-dark]="pestanaActiva() === 'clientes'" [class.bg-secondary]="pestanaActiva() !== 'clientes'">
+        {{ clientes().length }}
+      </span>
+    </button>
+  </li>
+</ul>
 
 <!-- Barra de Herramientas, Búsqueda y Botones de Exportación -->
 <div class="card shadow-sm border-0 mb-4 bg-white">
@@ -68,7 +128,7 @@
           <input
             type="text"
             class="form-control"
-            placeholder="Buscar por cliente, factura o repuesto..."
+            placeholder="Buscar por cliente, documento, factura o detalle..."
             [(ngModel)]="filtro"
           />
         </div>
@@ -109,70 +169,177 @@
   </div>
 </div>
 
-<!-- Tabla de Ventas -->
+<!-- ==================== CONTENIDO POR PESTAÑA ==================== -->
+
 @if (cargando()) {
   <div class="text-center py-5">
     <div class="spinner-border text-warning" role="status"></div>
-    <p class="text-muted mt-2">Cargando transacciones de venta...</p>
+    <p class="text-muted mt-2">Cargando registros...</p>
   </div>
-} @else if (ventasFiltradas().length === 0) {
-  <div class="text-center py-5 bg-white rounded-3 shadow-sm p-4">
-    <i class="bi bi-receipt fs-1 text-muted"></i>
-    <h5 class="fw-bold mt-2">No se encontraron ventas</h5>
-    <p class="text-muted small">No hay órdenes registradas con los criterios de búsqueda.</p>
-  </div>
-} @else {
-  <div class="card shadow-sm border-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-dark">
-        <tr>
-          <th class="ps-3">N° Factura</th>
-          <th>Fecha</th>
-          <th>Cliente</th>
-          <th>Detalle de Repuestos</th>
-          <th class="text-end">Subtotal</th>
-          <th class="text-end">IVA (19%)</th>
-          <th class="text-end">Total</th>
-          <th class="text-center pe-3">Acciones</th>
-        </tr>
-        </thead>
-        <tbody>
-          @for (venta of ventasFiltradas(); track venta.id) {
-            <tr>
-              <td class="ps-3 fw-bold text-muted">#{{ venta.id }}</td>
-              <td>{{ venta.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
-              <td class="fw-semibold">{{ venta.clienteNombre || 'Cliente General' }}</td>
-              <td>
-                <ul class="list-unstyled mb-0 small">
-                  @for (item of venta.detalles; track item.id) {
-                    <li>
-                      <i class="bi bi-dot text-warning"></i>
-                      {{ item.cantidad }}x {{ item.productoNombre }}
-                    </li>
-                  }
-                </ul>
-              </td>
-              <td class="text-end text-muted">{{ venta.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
-              <td class="text-end text-muted">{{ venta.iva | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
-              <td class="text-end fw-bold text-success fs-6">
-                {{ venta.total | currency:'COP':'symbol-narrow':'1.0-0' }}
-              </td>
-              <td class="text-center pe-3">
-                <button
-                  class="btn btn-outline-danger btn-sm"
-                  (click)="eliminarVenta(venta.id)"
-                  title="Eliminar venta y devolver inventario"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+} @else if (pestanaActiva() === 'repuestos') {
+  <!-- PESTAÑA 1: VENTAS DE REPUESTOS -->
+  @if (ventasFiltradas().length === 0) {
+    <div class="text-center py-5 bg-white rounded-3 shadow-sm p-4">
+      <i class="bi bi-receipt fs-1 text-muted"></i>
+      <h5 class="fw-bold mt-2">No se encontraron ventas de repuestos</h5>
+      <p class="text-muted small">No hay órdenes de autopartes registradas con los criterios de búsqueda.</p>
     </div>
-  </div>
+  } @else {
+    <div class="card shadow-sm border-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th class="ps-3">N° Factura</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Detalle de Repuestos</th>
+              <th class="text-end">Subtotal</th>
+              <th class="text-end">IVA (19%)</th>
+              <th class="text-end">Total</th>
+              <th class="text-center pe-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (venta of ventasFiltradas(); track venta.id) {
+              <tr>
+                <td class="ps-3 fw-bold text-muted">#{{ venta.id }}</td>
+                <td>{{ venta.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="fw-semibold">{{ venta.clienteNombre || 'Cliente General' }}</td>
+                <td>
+                  <ul class="list-unstyled mb-0 small">
+                    @for (item of venta.detalles; track item.id) {
+                      <li>
+                        <i class="bi bi-dot text-warning"></i>
+                        {{ item.cantidad }}x {{ item.productoNombre }}
+                      </li>
+                    }
+                  </ul>
+                </td>
+                <td class="text-end text-muted">{{ venta.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="text-end text-muted">{{ venta.iva | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="text-end fw-bold text-success fs-6">
+                  {{ venta.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </td>
+                <td class="text-center pe-3">
+                  <button
+                    class="btn btn-outline-danger btn-sm"
+                    (click)="eliminarVenta(venta.id)"
+                    title="Eliminar venta y devolver stock"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+} @else if (pestanaActiva() === 'vehiculos') {
+  <!-- PESTAÑA 2: VENTAS DE VEHÍCULOS -->
+  @if (ventasVehiculosFiltradas().length === 0) {
+    <div class="text-center py-5 bg-white rounded-3 shadow-sm p-4">
+      <i class="bi bi-car-front fs-1 text-muted"></i>
+      <h5 class="fw-bold mt-2">No se encontraron ventas de vehículos</h5>
+      <p class="text-muted small">No hay ventas de vehículos registradas con los criterios actuales.</p>
+    </div>
+  } @else {
+    <div class="card shadow-sm border-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th class="ps-3">N° Factura</th>
+              <th>Fecha</th>
+              <th>Cliente Comprador</th>
+              <th>Vehículo Adquirido</th>
+              <th class="text-end">Subtotal</th>
+              <th class="text-end">IVA (19%)</th>
+              <th class="text-end">Total Facturado</th>
+              <th class="text-center pe-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (v of ventasVehiculosFiltradas(); track v.id) {
+              <tr>
+                <td class="ps-3 fw-bold text-muted">#{{ v.id }}</td>
+                <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="fw-semibold">
+                  <i class="bi bi-person-circle text-primary me-1"></i>
+                  {{ v.clienteNombre }}
+                </td>
+                <td>
+                  <span class="badge bg-dark me-1">
+                    <i class="bi bi-car-front-fill me-1 text-warning"></i>
+                    {{ v.vehiculoDescripcion || ('Vehículo #' + v.vehiculoId) }}
+                  </span>
+                </td>
+                <td class="text-end text-muted">{{ v.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="text-end text-muted">{{ v.iva | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="text-end fw-bold text-success fs-6">
+                  {{ v.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </td>
+                <td class="text-center pe-3">
+                  <button
+                    class="btn btn-outline-danger btn-sm"
+                    (click)="eliminarVentaVehiculo(v.id)"
+                    title="Anular venta de vehículo y restaurar a Disponible"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+} @else if (pestanaActiva() === 'clientes') {
+  <!-- PESTAÑA 3: CLIENTES Y USUARIOS REGISTRADOS -->
+  @if (clientesFiltrados().length === 0) {
+    <div class="text-center py-5 bg-white rounded-3 shadow-sm p-4">
+      <i class="bi bi-person-x fs-1 text-muted"></i>
+      <h5 class="fw-bold mt-2">No se encontraron clientes</h5>
+      <p class="text-muted small">No hay clientes que coincidan con los criterios de búsqueda.</p>
+    </div>
+  } @else {
+    <div class="card shadow-sm border-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th class="ps-3">ID</th>
+              <th>Nombre Completo</th>
+              <th>Documento</th>
+              <th>Correo Electrónico</th>
+              <th>Teléfono</th>
+              <th>Edad</th>
+              <th>Dirección</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of clientesFiltrados(); track c.id) {
+              <tr>
+                <td class="ps-3 fw-bold text-muted">#{{ c.id }}</td>
+                <td class="fw-semibold">
+                  <i class="bi bi-person-circle text-primary me-2"></i>
+                  {{ c.nombres }} {{ c.apellidos }}
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ c.documento }}</span></td>
+                <td><a [href]="'mailto:' + c.correo" class="text-decoration-none">{{ c.correo }}</a></td>
+                <td>{{ c.telefono }}</td>
+                <td>{{ c.edad }} años</td>
+                <td><span class="text-muted small">{{ c.direccion || 'No especificada' }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
 }
 
 <!-- Modal para Registrar Venta -->
