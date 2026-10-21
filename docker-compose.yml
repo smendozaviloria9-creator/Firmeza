@@ -1,6 +1,7 @@
 services:
   # 1. Ejecucion de Pruebas Automatizadas (Paso obligatorio inicial)
   tests:
+    image: firmeza-tests:latest
     build:
       context: .
       dockerfile: Dockerfile.tests
@@ -27,6 +28,7 @@ services:
 
   # 3. Backend - API RESTful
   api:
+    image: firmeza-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -48,6 +50,7 @@ services:
 
   # 4. Panel Administrativo (MVC / Razor)
   admin:
+    image: firmeza-admin:latest
     build:
       context: .
       dockerfile: Dockerfile.web
@@ -68,6 +71,7 @@ services:
 
   # 5. Frontend Cliente (SPA Angular con Nginx)
   client:
+    image: firmeza-client:latest
     build:
       context: ./firmeza-frontend
       dockerfile: Dockerfile
