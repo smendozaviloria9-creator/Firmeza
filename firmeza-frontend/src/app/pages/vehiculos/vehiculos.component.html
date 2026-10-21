@@ -1,14 +1,45 @@
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
   <div>
     <h2 class="fw-bold text-dark mb-1">
       <i class="bi bi-car-front text-warning me-2"></i>Catálogo de Vehículos
     </h2>
-    <p class="text-muted mb-0">Explora nuestra flota de autos para venta y renta por día.</p>
+    <p class="text-muted mb-0">Gestión y visualización de la flota de autos para venta y renta diaria.</p>
   </div>
   <button class="btn btn-warning fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrear()">
     <i class="bi bi-plus-circle me-1"></i> Añadir Vehículo
   </button>
 </div>
+
+<!-- Pestañas para Separar Venta vs Renta -->
+<ul class="nav nav-pills mb-4 bg-white p-2 rounded-3 shadow-sm border">
+  <li class="nav-item">
+    <button
+      class="nav-link fw-semibold px-3 py-2"
+      [class.active]="pestanaModalidad() === 'todos'"
+      (click)="pestanaModalidad.set('todos')"
+    >
+      <i class="bi bi-grid-fill me-1"></i> Todos ({{ vehiculos().length }})
+    </button>
+  </li>
+  <li class="nav-item">
+    <button
+      class="nav-link fw-semibold px-3 py-2"
+      [class.active]="pestanaModalidad() === 'venta'"
+      (click)="pestanaModalidad.set('venta')"
+    >
+      <i class="bi bi-tag-fill me-1 text-warning"></i> En Venta ({{ totalVentaCount() }})
+    </button>
+  </li>
+  <li class="nav-item">
+    <button
+      class="nav-link fw-semibold px-3 py-2"
+      [class.active]="pestanaModalidad() === 'renta'"
+      (click)="pestanaModalidad.set('renta')"
+    >
+      <i class="bi bi-key-fill me-1 text-primary"></i> Para Renta ({{ totalRentaCount() }})
+    </button>
+  </li>
+</ul>
 
 @if (mensajeAccion()) {
   <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
@@ -58,6 +89,7 @@
           <option value="Disponible">Disponible</option>
           <option value="Rentado">Rentado</option>
           <option value="Vendido">Vendido</option>
+          <option value="En Mantenimiento">En Mantenimiento</option>
         </select>
       </div>
       <div class="col-md-2 d-flex gap-2">
@@ -76,25 +108,26 @@
 @if (cargando()) {
   <div class="text-center py-5">
     <div class="spinner-border text-warning" role="status"></div>
-    <p class="text-muted mt-2">Cargando flota de vehículos...</p>
+    <p class="text-muted mt-2">Cargando catálogo de vehículos...</p>
   </div>
-} @else if (vehiculos().length === 0) {
+} @else if (vehiculosFiltrados().length === 0) {
   <div class="text-center py-5 bg-white rounded-3 shadow-sm p-4">
     <i class="bi bi-car-front fs-1 text-muted"></i>
-    <h5 class="fw-bold mt-2">No se encontraron vehículos</h5>
-    <p class="text-muted small">Intenta cambiando los términos de búsqueda o añade uno nuevo.</p>
+    <h5 class="fw-bold mt-2">No se encontraron vehículos en esta categoría</h5>
+    <p class="text-muted small">Intenta cambiando los filtros o añade un nuevo vehículo a esta sección.</p>
   </div>
 } @else {
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-    @for (auto of vehiculos(); track auto.id) {
+    @for (auto of vehiculosFiltrados(); track auto.id) {
       <div class="col">
         <div class="card h-100 shadow-sm border-0">
+          <!-- Cabecera de la Tarjeta -->
           <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
             <div>
               <h5 class="fw-bold mb-0">{{ auto.marca }} {{ auto.modelo }}</h5>
               <small class="text-white-50">{{ auto.tipo }} · Año {{ auto.anio }}</small>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-1">
               @if (auto.estado === 'Disponible') {
                 <span class="badge bg-success">Disponible</span>
               } @else if (auto.estado === 'Rentado') {
@@ -110,7 +143,7 @@
                   type="button"
                   class="btn btn-sm btn-outline-light border-0 py-0 px-1 text-warning"
                   (click)="abrirModalEditar(auto)"
-                  title="Editar vehículo y kilometraje"
+                  title="Editar vehículo"
                 >
                   <i class="bi bi-pencil-square"></i>
                 </button>
@@ -126,15 +159,51 @@
             </div>
           </div>
 
+          <!-- Cuerpo de la Tarjeta -->
           <div class="card-body">
+            <!-- Modalidad Destacada -->
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+              @if (auto.precioVenta > 0 && auto.precioRentaDia === 0) {
+                <span class="badge bg-warning-subtle text-dark border border-warning px-2 py-1">
+                  <i class="bi bi-tag-fill text-warning me-1"></i>Para Venta
+                </span>
+              } @else if (auto.precioRentaDia > 0 && auto.precioVenta === 0) {
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                  <i class="bi bi-key-fill me-1"></i>Para Renta Diaria
+                </span>
+              } @else {
+                <span class="badge bg-secondary-subtle text-dark border px-2 py-1">
+                  <i class="bi bi-arrow-repeat me-1"></i>Venta y Renta
+                </span>
+              }
+
+              @if (auto.kilometraje === 0) {
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                  <i class="bi bi-stars me-1"></i>0 Km Nuevo
+                </span>
+              }
+            </div>
+
             <ul class="list-unstyled small mb-3">
-              <li class="py-1 border-bottom d-flex justify-content-between">
+              <li class="py-1 border-bottom d-flex justify-content-between align-items-center">
                 <span class="text-muted">Placa:</span>
-                <span class="fw-semibold">{{ auto.placa }}</span>
+                @if (esPlacaProvisional(auto.placa)) {
+                  <span class="badge bg-warning-subtle text-dark border border-warning">
+                    <i class="bi bi-clock-history me-1"></i>0 Km (En trámite)
+                  </span>
+                } @else {
+                  <span class="fw-bold font-monospace bg-light px-2 py-0 rounded border">{{ auto.placa }}</span>
+                }
               </li>
+              @if (auto.vin) {
+                <li class="py-1 border-bottom d-flex justify-content-between">
+                  <span class="text-muted">Chasis / VIN:</span>
+                  <span class="font-monospace small text-dark fw-semibold">{{ auto.vin }}</span>
+                </li>
+              }
               <li class="py-1 border-bottom d-flex justify-content-between">
                 <span class="text-muted">Kilometraje:</span>
-                <span class="fw-semibold">{{ auto.kilometraje }} km</span>
+                <span class="fw-semibold">{{ auto.kilometraje.toLocaleString() }} km</span>
               </li>
               @if (auto.color) {
                 <li class="py-1 border-bottom d-flex justify-content-between">
@@ -144,41 +213,78 @@
               }
             </ul>
 
-            <div class="bg-light p-3 rounded mb-3">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="small text-muted">Precio de Venta:</span>
-                <span class="fw-bold text-success fs-5">{{ auto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            <!-- Visualización Separada de Precios según la Pestaña o Modalidad -->
+            @if (pestanaModalidad() === 'venta' || (auto.precioVenta > 0 && auto.precioRentaDia === 0)) {
+              <!-- Solo Precio de Venta -->
+              <div class="bg-light p-3 rounded mb-3 text-center border-start border-4 border-success">
+                <span class="small text-muted d-block text-uppercase fw-semibold mb-1">Precio de Venta</span>
+                <span class="fw-bold text-success fs-4">{{ auto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
               </div>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="small text-muted">Tarifa de Renta / Día:</span>
-                <span class="fw-bold text-primary">{{ auto.precioRentaDia | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            } @else if (pestanaModalidad() === 'renta' || (auto.precioRentaDia > 0 && auto.precioVenta === 0)) {
+              <!-- Solo Tarifa de Renta Diaria -->
+              <div class="bg-light p-3 rounded mb-3 text-center border-start border-4 border-primary">
+                <span class="small text-muted d-block text-uppercase fw-semibold mb-1">Tarifa de Alquiler</span>
+                <span class="fw-bold text-primary fs-4">{{ auto.precioRentaDia | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                <small class="text-muted d-block mt-1">/ día completo</small>
               </div>
-            </div>
+            } @else {
+              <!-- Ambos Precios (Modo Mixto) -->
+              <div class="bg-light p-3 rounded mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small text-muted">Venta:</span>
+                  <span class="fw-bold text-success fs-5">{{ auto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="small text-muted">Renta / Día:</span>
+                  <span class="fw-bold text-primary">{{ auto.precioRentaDia | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+              </div>
+            }
           </div>
 
+          <!-- Pie de Tarjeta y Acciones Separadas -->
           <div class="card-footer bg-white border-0 pt-0 pb-3">
             @if (auto.estado === 'Disponible') {
-              <div class="d-grid gap-2 d-flex">
+              @if (pestanaModalidad() === 'venta' || (auto.precioVenta > 0 && auto.precioRentaDia === 0)) {
+                <!-- Solo Botón Comprar -->
                 <button
-                  class="btn btn-outline-primary btn-sm flex-fill fw-semibold"
-                  (click)="solicitarVehiculo(auto, 'renta')"
-                >
-                  <i class="bi bi-clock-history me-1"></i> Rentar
-                </button>
-                <button
-                  class="btn btn-warning btn-sm flex-fill fw-semibold"
+                  class="btn btn-warning btn-sm w-100 fw-semibold py-2 shadow-sm"
                   (click)="solicitarVehiculo(auto, 'compra')"
                 >
-                  <i class="bi bi-cart-check me-1"></i> Comprar
+                  <i class="bi bi-cart-check me-1"></i> Comprar Vehículo
                 </button>
-              </div>
+              } @else if (pestanaModalidad() === 'renta' || (auto.precioRentaDia > 0 && auto.precioVenta === 0)) {
+                <!-- Solo Botón Rentar -->
+                <button
+                  class="btn btn-outline-primary btn-sm w-100 fw-semibold py-2 shadow-sm"
+                  (click)="solicitarVehiculo(auto, 'renta')"
+                >
+                  <i class="bi bi-clock-history me-1"></i> Rentar Vehículo
+                </button>
+              } @else {
+                <!-- Ambos Botones -->
+                <div class="d-grid gap-2 d-flex">
+                  <button
+                    class="btn btn-outline-primary btn-sm flex-fill fw-semibold"
+                    (click)="solicitarVehiculo(auto, 'renta')"
+                  >
+                    <i class="bi bi-clock-history me-1"></i> Rentar
+                  </button>
+                  <button
+                    class="btn btn-warning btn-sm flex-fill fw-semibold"
+                    (click)="solicitarVehiculo(auto, 'compra')"
+                  >
+                    <i class="bi bi-cart-check me-1"></i> Comprar
+                  </button>
+                </div>
+              }
             } @else if (auto.estado === 'En Mantenimiento') {
               <button class="btn btn-outline-info btn-sm w-100 fw-semibold" disabled>
                 <i class="bi bi-wrench-adjustable me-1"></i> En Mantenimiento Técnico
               </button>
             } @else {
               <button class="btn btn-secondary btn-sm w-100" disabled>
-                {{ auto.estado === 'Rentado' ? 'Vehículo Rentado' : 'Vehículo Vendido' }}
+                {{ auto.estado === 'Rentado' ? 'Vehículo Rentado Actualmente' : 'Vehículo Vendido' }}
               </button>
             }
           </div>
@@ -188,7 +294,7 @@
   </div>
 }
 
-<!-- Modal para Añadir Vehículo -->
+<!-- Modal para Añadir o Editar Vehículo -->
 @if (mostrarModalCrear()) {
   <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.55);" role="dialog">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -196,7 +302,7 @@
         <div class="modal-header bg-dark text-white">
           <h5 class="modal-title fw-bold">
             <i class="bi bi-car-front-fill text-warning me-2"></i>
-            {{ modoEdicion() ? 'Editar Vehículo y Kilometraje' : 'Añadir Nuevo Vehículo' }}
+            {{ modoEdicion() ? 'Editar Vehículo' : 'Añadir Nuevo Vehículo' }}
           </h5>
           <button type="button" class="btn-close btn-close-white" (click)="cerrarModalCrear()"></button>
         </div>
@@ -211,10 +317,46 @@
                   <a routerLink="/login" (click)="cerrarModalCrear()" class="fw-bold text-dark text-decoration-underline ms-1">
                     Inicia sesión aquí
                   </a>
-                  con tu cuenta o como administrador.
+                  con tu cuenta de asesor o administrador.
                 </div>
               </div>
             }
+
+            <!-- Selector de Modalidad (Venta vs Renta) -->
+            <div class="mb-4 p-3 bg-light rounded-3 border">
+              <label class="form-label fw-bold text-dark d-block mb-2">
+                <i class="bi bi-signpost-split me-1 text-warning"></i> Propósito del Vehículo en el Concesionario
+              </label>
+              <div class="btn-group w-100" role="group">
+                <button
+                  type="button"
+                  class="btn fw-semibold"
+                  [class.btn-warning]="modalidadVehiculo() === 'venta'"
+                  [class.btn-outline-secondary]="modalidadVehiculo() !== 'venta'"
+                  (click)="onModalidadChange('venta')"
+                >
+                  <i class="bi bi-tag-fill me-1"></i> Para Venta
+                </button>
+                <button
+                  type="button"
+                  class="btn fw-semibold"
+                  [class.btn-primary]="modalidadVehiculo() === 'renta'"
+                  [class.btn-outline-secondary]="modalidadVehiculo() !== 'renta'"
+                  (click)="onModalidadChange('renta')"
+                >
+                  <i class="bi bi-key-fill me-1"></i> Para Renta Diaria
+                </button>
+                <button
+                  type="button"
+                  class="btn fw-semibold"
+                  [class.btn-dark]="modalidadVehiculo() === 'ambos'"
+                  [class.btn-outline-secondary]="modalidadVehiculo() !== 'ambos'"
+                  (click)="onModalidadChange('ambos')"
+                >
+                  <i class="bi bi-arrow-repeat me-1"></i> Ambos (Venta y Renta)
+                </button>
+              </div>
+            </div>
 
             <div class="row g-3">
               <div class="col-md-6">
@@ -254,16 +396,40 @@
                 />
               </div>
 
+              <!-- Sección de Placa Inteligente (Opcional en Venta / Obligatoria en Renta) -->
               <div class="col-md-4">
-                <label class="form-label fw-semibold">Placa *</label>
+                <label class="form-label fw-semibold">
+                  Placa
+                  @if (modalidadVehiculo() === 'renta') {
+                    <span class="text-danger">*</span>
+                  } @else {
+                    <span class="text-muted small">(Opcional en 0 Km)</span>
+                  }
+                </label>
+
                 <input
                   type="text"
                   class="form-control text-uppercase"
-                  placeholder="Ej: ABC-123"
-                  required
+                  [placeholder]="esAutoNuevoSinPlaca() && modalidadVehiculo() === 'venta' ? 'Se generará trámite provisional' : 'Ej: ABC-123'"
+                  [disabled]="esAutoNuevoSinPlaca() && modalidadVehiculo() === 'venta'"
                   name="placa"
                   [(ngModel)]="nuevoVehiculo.placa"
                 />
+
+                @if (modalidadVehiculo() === 'venta') {
+                  <div class="form-check mt-1">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="checkSinPlaca"
+                      [checked]="esAutoNuevoSinPlaca()"
+                      (change)="esAutoNuevoSinPlaca.set(!esAutoNuevoSinPlaca())"
+                    />
+                    <label class="form-check-label small text-muted" for="checkSinPlaca">
+                      Auto nuevo 0 Km (Sin placa definitiva aún / En trámite)
+                    </label>
+                  </div>
+                }
               </div>
 
               <div class="col-md-4">
@@ -309,40 +475,56 @@
                 </select>
               </div>
 
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Precio de Venta ($COP) *</label>
-                <div class="input-group">
-                  <span class="input-group-text">$</span>
-                  <input
-                    type="number"
-                    class="form-control"
-                    min="0"
-                    step="500000"
-                    required
-                    name="precioVenta"
-                    [(ngModel)]="nuevoVehiculo.precioVenta"
-                  />
+              <!-- Campos de Precios Dinámicos según Modalidad -->
+              @if (modalidadVehiculo() === 'venta' || modalidadVehiculo() === 'ambos') {
+                <div [class]="modalidadVehiculo() === 'ambos' ? 'col-md-6' : 'col-md-12'">
+                  <label class="form-label fw-semibold text-success">
+                    <i class="bi bi-tag-fill me-1"></i> Precio de Venta ($COP) *
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input
+                      type="number"
+                      class="form-control"
+                      min="0"
+                      step="500000"
+                      required
+                      name="precioVenta"
+                      [(ngModel)]="nuevoVehiculo.precioVenta"
+                    />
+                  </div>
                 </div>
-              </div>
+              }
 
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Tarifa Renta por Día ($COP) *</label>
-                <div class="input-group">
-                  <span class="input-group-text">$</span>
-                  <input
-                    type="number"
-                    class="form-control"
-                    min="0"
-                    step="10000"
-                    required
-                    name="precioRentaDia"
-                    [(ngModel)]="nuevoVehiculo.precioRentaDia"
-                  />
+              @if (modalidadVehiculo() === 'renta' || modalidadVehiculo() === 'ambos') {
+                <div [class]="modalidadVehiculo() === 'ambos' ? 'col-md-6' : 'col-md-12'">
+                  <label class="form-label fw-semibold text-primary">
+                    <i class="bi bi-key-fill me-1"></i> Tarifa Renta por Día ($COP) *
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input
+                      type="number"
+                      class="form-control"
+                      min="0"
+                      step="10000"
+                      required
+                      name="precioRentaDia"
+                      [(ngModel)]="nuevoVehiculo.precioRentaDia"
+                    />
+                  </div>
                 </div>
-              </div>
+              }
 
               <div class="col-md-12">
-                <label class="form-label fw-semibold">Número VIN / Chasis (Opcional)</label>
+                <label class="form-label fw-semibold">
+                  Número VIN / Chasis
+                  @if (modalidadVehiculo() === 'venta' && esAutoNuevoSinPlaca()) {
+                    <span class="text-warning-emphasis small">(Recomendado para identificar el auto 0 Km)</span>
+                  } @else {
+                    <span class="text-muted small">(Opcional)</span>
+                  }
+                </label>
                 <input
                   type="text"
                   class="form-control text-uppercase"

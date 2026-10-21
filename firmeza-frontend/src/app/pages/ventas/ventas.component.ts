@@ -220,13 +220,14 @@ export class VentasComponent implements OnInit {
       }
     });
 
-    // Cargar vehículos disponibles para la venta
+    // Cargar vehículos disponibles para la venta (con precio de venta)
     this.vehiculoService.getVehiculos(undefined, undefined, 'Disponible').subscribe({
       next: (data) => {
-        this.vehiculosDisponibles.set(data);
-        if (data.length > 0) {
-          this.vehiculoId = data[0].id;
-          this.precioFinalVehiculo = data[0].precioVenta;
+        const enVenta = data.filter(v => v.precioVenta > 0);
+        this.vehiculosDisponibles.set(enVenta);
+        if (enVenta.length > 0) {
+          this.vehiculoId = enVenta[0].id;
+          this.precioFinalVehiculo = enVenta[0].precioVenta;
         }
       }
     });
