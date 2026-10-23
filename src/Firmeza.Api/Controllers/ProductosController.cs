@@ -10,7 +10,6 @@ namespace Firmeza.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class ProductosController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -23,6 +22,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ProductoDto>>> GetAll([FromQuery] string? buscar, [FromQuery] string? categoria)
     {
         var query = _context.Productos.AsQueryable();
@@ -42,6 +42,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<ActionResult<ProductoDto>> GetById(int id)
     {
         var producto = await _context.Productos.FindAsync(id);
@@ -50,7 +51,6 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<ActionResult<ProductoDto>> Create(ProductoCreateDto dto)
     {
         var producto = _mapper.Map<Producto>(dto);
@@ -61,7 +61,6 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<IActionResult> Update(int id, ProductoUpdateDto dto)
     {
         var producto = await _context.Productos.FindAsync(id);
@@ -73,7 +72,6 @@ public class ProductosController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<IActionResult> Delete(int id)
     {
         var producto = await _context.Productos.FindAsync(id);

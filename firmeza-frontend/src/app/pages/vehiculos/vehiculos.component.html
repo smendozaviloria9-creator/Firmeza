@@ -138,7 +138,6 @@
                 <span class="badge bg-danger">Vendido</span>
               }
 
-              @if (authService.isAuthenticated()) {
                 <button
                   type="button"
                   class="btn btn-sm btn-outline-light border-0 py-0 px-1 text-warning"
@@ -155,7 +154,6 @@
                 >
                   <i class="bi bi-trash"></i>
                 </button>
-              }
             </div>
           </div>
 
@@ -280,16 +278,11 @@
 
         <form (ngSubmit)="guardarVehiculo()">
           <div class="modal-body p-4">
-            @if (!authService.isAuthenticated()) {
-              <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
-                <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
-                <div>
-                  Para guardar debes estar autenticado.
-                  <a routerLink="/login" (click)="cerrarModalCrear()" class="fw-bold text-dark text-decoration-underline ms-1">
-                    Inicia sesión aquí
-                  </a>
-                  con tu cuenta de asesor o administrador.
-                </div>
+            @if (mensajeError()) {
+              <div class="alert alert-danger shadow-sm alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {{ mensajeError() }}
+                <button type="button" class="btn-close" (click)="mensajeError.set(null)"></button>
               </div>
             }
 
@@ -501,7 +494,7 @@
             <button
               type="submit"
               class="btn btn-warning fw-semibold px-4"
-              [disabled]="guardando() || !authService.isAuthenticated()"
+              [disabled]="guardando()"
             >
               @if (guardando()) {
                 <span class="spinner-border spinner-border-sm me-1"></span> Guardando...

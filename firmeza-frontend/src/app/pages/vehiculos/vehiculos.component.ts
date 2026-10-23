@@ -127,7 +127,7 @@ export class VehiculosComponent implements OnInit {
       marca: auto.marca,
       modelo: auto.modelo,
       anio: auto.anio,
-      placa: esProvisional ? '' : auto.placa,
+      placa: auto.placa,
       vin: auto.vin || '',
       color: auto.color || '',
       tipo: auto.tipo,
@@ -167,11 +167,6 @@ export class VehiculosComponent implements OnInit {
   }
 
   guardarVehiculo(): void {
-    if (!this.authService.isAuthenticated()) {
-      this.mensajeError.set('Debes iniciar sesión para registrar o editar un vehículo.');
-      return;
-    }
-
     if (!this.nuevoVehiculo.marca?.trim() || !this.nuevoVehiculo.modelo?.trim()) {
       this.mensajeError.set('Marca y modelo son campos obligatorios.');
       return;
@@ -187,11 +182,11 @@ export class VehiculosComponent implements OnInit {
       }
       this.nuevoVehiculo.precioRentaDia = 0;
 
-      // En venta: el vehículo no tiene placa fija (es 0 Km en vitrina con placa provisional)
-      if (this.esAutoNuevoSinPlaca() || !this.nuevoVehiculo.placa?.trim() || this.esPlacaProvisional(this.nuevoVehiculo.placa)) {
+      // En venta: si ya tenía identificador provisional asignado, mantenerlo; sino generar uno
+      if (!this.nuevoVehiculo.placa?.trim()) {
         const sufijo = Math.random().toString(36).substring(2, 7).toUpperCase();
         this.nuevoVehiculo.placa = `TMP-${sufijo}`;
-      } else {
+      } else if (!this.nuevoVehiculo.placa.toUpperCase().startsWith('TMP-') && !this.nuevoVehiculo.placa.toUpperCase().startsWith('PROV-')) {
         this.nuevoVehiculo.placa = `TMP-${this.nuevoVehiculo.placa.trim().toUpperCase()}`;
       }
     } else {

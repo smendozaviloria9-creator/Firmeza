@@ -92,11 +92,6 @@ export class RepuestosComponent implements OnInit {
   }
 
   guardarRepuesto(): void {
-    if (!this.authService.isAuthenticated()) {
-      this.mensajeError.set('Debes iniciar sesión para registrar o editar un repuesto.');
-      return;
-    }
-
     if (!this.nuevoRepuesto.nombre?.trim() || !this.nuevoRepuesto.categoria || this.nuevoRepuesto.precioUnitario <= 0) {
       this.mensajeError.set('El nombre, la categoría y el precio son obligatorios.');
       return;

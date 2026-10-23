@@ -4,3 +4,5 @@ obj/
 *.user
 .vs/
 .idea/
+publish-api/
+Dockerfile.api.local

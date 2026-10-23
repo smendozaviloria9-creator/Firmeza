@@ -10,7 +10,6 @@ namespace Firmeza.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class VehiculosController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -23,6 +22,7 @@ public class VehiculosController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<VehiculoDto>>> GetAll([FromQuery] string? buscar, [FromQuery] string? tipo, [FromQuery] string? estado)
     {
         var query = _context.Vehiculos.AsQueryable();
@@ -47,6 +47,7 @@ public class VehiculosController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<ActionResult<VehiculoDto>> GetById(int id)
     {
         var vehiculo = await _context.Vehiculos.FindAsync(id);
@@ -55,7 +56,6 @@ public class VehiculosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<ActionResult<VehiculoDto>> Create(VehiculoCreateDto dto)
     {
         if (await _context.Vehiculos.AnyAsync(v => v.Placa == dto.Placa))
@@ -72,7 +72,6 @@ public class VehiculosController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<IActionResult> Update(int id, VehiculoUpdateDto dto)
     {
         var vehiculo = await _context.Vehiculos.FindAsync(id);
@@ -89,7 +88,6 @@ public class VehiculosController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Administrador,Cliente")]
     public async Task<IActionResult> Delete(int id)
     {
         var vehiculo = await _context.Vehiculos.FindAsync(id);
