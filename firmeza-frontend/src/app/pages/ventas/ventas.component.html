@@ -654,10 +654,15 @@
             @if (tipoVenta() === 'vehiculo') {
               <div class="row g-3">
                 <div class="col-md-12">
-                  <label class="form-label fw-semibold">Vehículo Disponible *</label>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label fw-semibold mb-0">Vehículo Disponible para Venta (Sin Placa / 0 Km) *</label>
+                    <span class="badge bg-warning-subtle text-dark border border-warning">
+                      <i class="bi bi-shield-check me-1"></i>Vitrina 0 Km
+                    </span>
+                  </div>
                   @if (vehiculosDisponibles().length === 0) {
                     <div class="alert alert-warning small">
-                      <i class="bi bi-exclamation-circle me-1"></i> No hay vehículos con estado "Disponible" para la venta.
+                      <i class="bi bi-exclamation-circle me-1"></i> No hay vehículos sin placa disponibles para la venta en vitrina. Los vehículos matriculados con placa pertenecen a la flota de renta diaria.
                     </div>
                   } @else {
                     <select
@@ -669,10 +674,13 @@
                     >
                       @for (auto of vehiculosDisponibles(); track auto.id) {
                         <option [value]="auto.id">
-                          {{ auto.marca }} {{ auto.modelo }} ({{ auto.placa }}) · Año {{ auto.anio }} - Precio: {{ auto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                          {{ auto.marca }} {{ auto.modelo }} (0 Km - Sin placa / Trámite) · Año {{ auto.anio }} - Precio: {{ auto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
                         </option>
                       }
                     </select>
+                    <div class="form-text small text-muted">
+                      <i class="bi bi-info-circle me-1"></i>Solo se listan vehículos nuevos sin matricular. La flota con placa está reservada exclusivamente para el servicio de renta.
+                    </div>
                   }
                 </div>
 

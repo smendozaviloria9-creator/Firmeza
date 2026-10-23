@@ -18,7 +18,7 @@
       [class.active]="pestanaModalidad() === 'todos'"
       (click)="pestanaModalidad.set('todos')"
     >
-      <i class="bi bi-grid-fill me-1"></i> Todos ({{ vehiculos().length }})
+      <i class="bi bi-grid-fill me-1"></i> Todos los Vehículos ({{ vehiculos().length }})
     </button>
   </li>
   <li class="nav-item">
@@ -27,7 +27,7 @@
       [class.active]="pestanaModalidad() === 'venta'"
       (click)="pestanaModalidad.set('venta')"
     >
-      <i class="bi bi-tag-fill me-1 text-warning"></i> En Venta ({{ totalVentaCount() }})
+      <i class="bi bi-tag-fill me-1 text-warning"></i> En Venta (Sin Placa - 0 Km) ({{ totalVentaCount() }})
     </button>
   </li>
   <li class="nav-item">
@@ -36,7 +36,7 @@
       [class.active]="pestanaModalidad() === 'renta'"
       (click)="pestanaModalidad.set('renta')"
     >
-      <i class="bi bi-key-fill me-1 text-primary"></i> Para Renta ({{ totalRentaCount() }})
+      <i class="bi bi-key-fill me-1 text-primary"></i> Para Renta (Con Placa) ({{ totalRentaCount() }})
     </button>
   </li>
 </ul>
@@ -163,36 +163,34 @@
           <div class="card-body">
             <!-- Modalidad Destacada -->
             <div class="mb-3 d-flex justify-content-between align-items-center">
-              @if (auto.precioVenta > 0 && auto.precioRentaDia === 0) {
+              @if (esPlacaProvisional(auto.placa)) {
                 <span class="badge bg-warning-subtle text-dark border border-warning px-2 py-1">
-                  <i class="bi bi-tag-fill text-warning me-1"></i>Para Venta
+                  <i class="bi bi-tag-fill text-warning me-1"></i>Para Venta (0 Km)
                 </span>
-              } @else if (auto.precioRentaDia > 0 && auto.precioVenta === 0) {
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
-                  <i class="bi bi-key-fill me-1"></i>Para Renta Diaria
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                  <i class="bi bi-stars me-1"></i>0 Km Vitrina
                 </span>
               } @else {
-                <span class="badge bg-secondary-subtle text-dark border px-2 py-1">
-                  <i class="bi bi-arrow-repeat me-1"></i>Venta y Renta
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                  <i class="bi bi-key-fill me-1"></i>Flota Renta Diaria
                 </span>
-              }
-
-              @if (auto.kilometraje === 0) {
-                <span class="badge bg-success-subtle text-success border border-success-subtle">
-                  <i class="bi bi-stars me-1"></i>0 Km Nuevo
+                <span class="badge bg-secondary-subtle text-dark border">
+                  <i class="bi bi-speedometer2 me-1"></i>{{ auto.kilometraje.toLocaleString() }} km
                 </span>
               }
             </div>
 
             <ul class="list-unstyled small mb-3">
               <li class="py-1 border-bottom d-flex justify-content-between align-items-center">
-                <span class="text-muted">Placa:</span>
+                <span class="text-muted">Placa / Registro:</span>
                 @if (esPlacaProvisional(auto.placa)) {
                   <span class="badge bg-warning-subtle text-dark border border-warning">
-                    <i class="bi bi-clock-history me-1"></i>0 Km (En trámite)
+                    <i class="bi bi-shield-exclamation me-1"></i>Sin Placa (0 Km en vitrina)
                   </span>
                 } @else {
-                  <span class="fw-bold font-monospace bg-light px-2 py-0 rounded border">{{ auto.placa }}</span>
+                  <span class="fw-bold font-monospace bg-warning-subtle text-dark px-2 py-1 rounded border border-dark">
+                    <i class="bi bi-card-text me-1"></i>{{ auto.placa }}
+                  </span>
                 }
               </li>
               @if (auto.vin) {
@@ -213,31 +211,20 @@
               }
             </ul>
 
-            <!-- Visualización Separada de Precios según la Pestaña o Modalidad -->
-            @if (pestanaModalidad() === 'venta' || (auto.precioVenta > 0 && auto.precioRentaDia === 0)) {
-              <!-- Solo Precio de Venta -->
+            <!-- Visualización Separada de Precios según si es Venta (Sin Placa) o Renta (Con Placa) -->
+            @if (esPlacaProvisional(auto.placa)) {
+              <!-- Solo Precio de Venta para autos sin placa -->
               <div class="bg-light p-3 rounded mb-3 text-center border-start border-4 border-success">
                 <span class="small text-muted d-block text-uppercase fw-semibold mb-1">Precio de Venta</span>
                 <span class="fw-bold text-success fs-4">{{ auto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                <small class="text-muted d-block mt-1">Vehículo nuevo 0 Km · Matrícula en trámite</small>
               </div>
-            } @else if (pestanaModalidad() === 'renta' || (auto.precioRentaDia > 0 && auto.precioVenta === 0)) {
-              <!-- Solo Tarifa de Renta Diaria -->
+            } @else {
+              <!-- Solo Tarifa de Renta Diaria para autos con placa -->
               <div class="bg-light p-3 rounded mb-3 text-center border-start border-4 border-primary">
                 <span class="small text-muted d-block text-uppercase fw-semibold mb-1">Tarifa de Alquiler</span>
                 <span class="fw-bold text-primary fs-4">{{ auto.precioRentaDia | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-                <small class="text-muted d-block mt-1">/ día completo</small>
-              </div>
-            } @else {
-              <!-- Ambos Precios (Modo Mixto) -->
-              <div class="bg-light p-3 rounded mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="small text-muted">Venta:</span>
-                  <span class="fw-bold text-success fs-5">{{ auto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="small text-muted">Renta / Día:</span>
-                  <span class="fw-bold text-primary">{{ auto.precioRentaDia | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-                </div>
+                <small class="text-muted d-block mt-1">/ día completo (Vehículo matriculado)</small>
               </div>
             }
           </div>
@@ -245,38 +232,22 @@
           <!-- Pie de Tarjeta y Acciones Separadas -->
           <div class="card-footer bg-white border-0 pt-0 pb-3">
             @if (auto.estado === 'Disponible') {
-              @if (pestanaModalidad() === 'venta' || (auto.precioVenta > 0 && auto.precioRentaDia === 0)) {
-                <!-- Solo Botón Comprar -->
+              @if (esPlacaProvisional(auto.placa)) {
+                <!-- Solo Botón Comprar para autos sin placa -->
                 <button
                   class="btn btn-warning btn-sm w-100 fw-semibold py-2 shadow-sm"
                   (click)="solicitarVehiculo(auto, 'compra')"
                 >
-                  <i class="bi bi-cart-check me-1"></i> Comprar Vehículo
+                  <i class="bi bi-cart-check me-1"></i> Comprar Vehículo (0 Km)
                 </button>
-              } @else if (pestanaModalidad() === 'renta' || (auto.precioRentaDia > 0 && auto.precioVenta === 0)) {
-                <!-- Solo Botón Rentar -->
+              } @else {
+                <!-- Solo Botón Rentar para autos con placa -->
                 <button
                   class="btn btn-outline-primary btn-sm w-100 fw-semibold py-2 shadow-sm"
                   (click)="solicitarVehiculo(auto, 'renta')"
                 >
-                  <i class="bi bi-clock-history me-1"></i> Rentar Vehículo
+                  <i class="bi bi-clock-history me-1"></i> Rentar Vehículo (Placa: {{ auto.placa }})
                 </button>
-              } @else {
-                <!-- Ambos Botones -->
-                <div class="d-grid gap-2 d-flex">
-                  <button
-                    class="btn btn-outline-primary btn-sm flex-fill fw-semibold"
-                    (click)="solicitarVehiculo(auto, 'renta')"
-                  >
-                    <i class="bi bi-clock-history me-1"></i> Rentar
-                  </button>
-                  <button
-                    class="btn btn-warning btn-sm flex-fill fw-semibold"
-                    (click)="solicitarVehiculo(auto, 'compra')"
-                  >
-                    <i class="bi bi-cart-check me-1"></i> Comprar
-                  </button>
-                </div>
               }
             } @else if (auto.estado === 'En Mantenimiento') {
               <button class="btn btn-outline-info btn-sm w-100 fw-semibold" disabled>
@@ -325,7 +296,7 @@
             <!-- Selector de Modalidad (Venta vs Renta) -->
             <div class="mb-4 p-3 bg-light rounded-3 border">
               <label class="form-label fw-bold text-dark d-block mb-2">
-                <i class="bi bi-signpost-split me-1 text-warning"></i> Propósito del Vehículo en el Concesionario
+                <i class="bi bi-signpost-split me-1 text-warning"></i> Propósito del Vehículo en Firmeza
               </label>
               <div class="btn-group w-100" role="group">
                 <button
@@ -335,7 +306,7 @@
                   [class.btn-outline-secondary]="modalidadVehiculo() !== 'venta'"
                   (click)="onModalidadChange('venta')"
                 >
-                  <i class="bi bi-tag-fill me-1"></i> Para Venta
+                  <i class="bi bi-tag-fill me-1"></i> Para Venta (Sin Placa - 0 Km)
                 </button>
                 <button
                   type="button"
@@ -344,16 +315,7 @@
                   [class.btn-outline-secondary]="modalidadVehiculo() !== 'renta'"
                   (click)="onModalidadChange('renta')"
                 >
-                  <i class="bi bi-key-fill me-1"></i> Para Renta Diaria
-                </button>
-                <button
-                  type="button"
-                  class="btn fw-semibold"
-                  [class.btn-dark]="modalidadVehiculo() === 'ambos'"
-                  [class.btn-outline-secondary]="modalidadVehiculo() !== 'ambos'"
-                  (click)="onModalidadChange('ambos')"
-                >
-                  <i class="bi bi-arrow-repeat me-1"></i> Ambos (Venta y Renta)
+                  <i class="bi bi-key-fill me-1"></i> Para Renta Diaria (Con Placa)
                 </button>
               </div>
             </div>
@@ -475,9 +437,9 @@
                 </select>
               </div>
 
-              <!-- Campos de Precios Dinámicos según Modalidad -->
-              @if (modalidadVehiculo() === 'venta' || modalidadVehiculo() === 'ambos') {
-                <div [class]="modalidadVehiculo() === 'ambos' ? 'col-md-6' : 'col-md-12'">
+              <!-- Campos de Precios según Modalidad Exclusiva -->
+              @if (modalidadVehiculo() === 'venta') {
+                <div class="col-md-12">
                   <label class="form-label fw-semibold text-success">
                     <i class="bi bi-tag-fill me-1"></i> Precio de Venta ($COP) *
                   </label>
@@ -494,10 +456,8 @@
                     />
                   </div>
                 </div>
-              }
-
-              @if (modalidadVehiculo() === 'renta' || modalidadVehiculo() === 'ambos') {
-                <div [class]="modalidadVehiculo() === 'ambos' ? 'col-md-6' : 'col-md-12'">
+              } @else {
+                <div class="col-md-12">
                   <label class="form-label fw-semibold text-primary">
                     <i class="bi bi-key-fill me-1"></i> Tarifa Renta por Día ($COP) *
                   </label>

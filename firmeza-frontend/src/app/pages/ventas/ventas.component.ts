@@ -152,12 +152,21 @@ export class VentasComponent implements OnInit {
     }, 400);
   }
 
+  esPlacaProvisional(placa?: string | null): boolean {
+    if (!placa) return true;
+    const p = placa.trim().toUpperCase();
+    return p.startsWith('TMP-') || p.startsWith('PROV-') || p === 'EN TRÁMITE' || p === 'SIN PLACA' || p === 'EN TRAMITE' || p === 'S/P' || p === 'TRAMITE' || p === '';
+  }
+
   abrirConVehiculo(vehiculoId: number): void {
     this.abrirModalCrear('vehiculo');
     setTimeout(() => {
-      this.vehiculoId = vehiculoId;
-      this.onVehiculoChange();
-    }, 400);
+      const auto = this.vehiculosDisponibles().find(v => v.id === vehiculoId);
+      if (auto) {
+        this.vehiculoId = vehiculoId;
+        this.precioFinalVehiculo = auto.precioVenta;
+      }
+    }, 500);
   }
 
   cargarVentas(): void {
@@ -220,14 +229,19 @@ export class VentasComponent implements OnInit {
       }
     });
 
-    // Cargar vehículos disponibles para la venta (con precio de venta)
+    // Cargar vehículos disponibles para la venta (exclusivamente sin placa / 0 Km en vitrina)
     this.vehiculoService.getVehiculos(undefined, undefined, 'Disponible').subscribe({
       next: (data) => {
-        const enVenta = data.filter(v => v.precioVenta > 0);
+        const enVenta = data.filter(v => v.precioVenta > 0 && this.esPlacaProvisional(v.placa));
         this.vehiculosDisponibles.set(enVenta);
         if (enVenta.length > 0) {
-          this.vehiculoId = enVenta[0].id;
-          this.precioFinalVehiculo = enVenta[0].precioVenta;
+          if (!this.vehiculoId || !enVenta.some(v => v.id === +this.vehiculoId)) {
+            this.vehiculoId = enVenta[0].id;
+            this.precioFinalVehiculo = enVenta[0].precioVenta;
+          }
+        } else {
+          this.vehiculoId = 0;
+          this.precioFinalVehiculo = 0;
         }
       }
     });

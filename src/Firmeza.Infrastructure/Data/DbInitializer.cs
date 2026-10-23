@@ -66,15 +66,21 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        // Semilla de Vehículos para Venta y Renta si la base de datos esta limpia
+        // Semilla de Vehículos: Separados en Flota de Renta (con placa) y Vitrina de Venta (0 Km en trámite)
         if (!await context.Vehiculos.AnyAsync())
         {
             var vehiculos = new List<Vehiculo>
             {
-                new() { Marca = "Toyota", Modelo = "Corolla Cross", Anio = 2024, Placa = "KHT345", Vin = "9BRBL340X0012345", Color = "Blanco Perlado", Tipo = "SUV", Kilometraje = 5200, PrecioVenta = 125000000m, PrecioRentaDia = 230000m, Estado = "Disponible" },
-                new() { Marca = "Ford", Modelo = "Ranger XLT 4x4", Anio = 2023, Placa = "MNO789", Vin = "8AFBT340Y0098765", Color = "Gris Metálico", Tipo = "Camioneta", Kilometraje = 22000, PrecioVenta = 165000000m, PrecioRentaDia = 310000m, Estado = "Disponible" },
-                new() { Marca = "Chevrolet", Modelo = "Onix Turbo", Anio = 2023, Placa = "FGH512", Vin = "9BGKS340Z0054321", Color = "Rojo Rubí", Tipo = "Sedán", Kilometraje = 14500, PrecioVenta = 68000000m, PrecioRentaDia = 150000m, Estado = "Disponible" },
-                new() { Marca = "Mazda", Modelo = "CX-30 Grand Touring", Anio = 2024, Placa = "LKP990", Vin = "3MZDM340W0067890", Color = "Azul Marino", Tipo = "SUV", Kilometraje = 8000, PrecioVenta = 118000000m, PrecioRentaDia = 220000m, Estado = "Disponible" }
+                // Flota de Renta (Vehículos matriculados con placa activa)
+                new() { Marca = "Toyota", Modelo = "Corolla Cross", Anio = 2024, Placa = "KHT345", Vin = "9BRBL340X0012345", Color = "Blanco Perlado", Tipo = "SUV", Kilometraje = 5200, PrecioVenta = 0m, PrecioRentaDia = 230000m, Estado = "Disponible" },
+                new() { Marca = "Ford", Modelo = "Ranger XLT 4x4", Anio = 2023, Placa = "MNO789", Vin = "8AFBT340Y0098765", Color = "Gris Metálico", Tipo = "Camioneta", Kilometraje = 22000, PrecioVenta = 0m, PrecioRentaDia = 310000m, Estado = "Disponible" },
+                new() { Marca = "Chevrolet", Modelo = "Onix Turbo", Anio = 2023, Placa = "FGH512", Vin = "9BGKS340Z0054321", Color = "Rojo Rubí", Tipo = "Sedán", Kilometraje = 14500, PrecioVenta = 0m, PrecioRentaDia = 150000m, Estado = "Disponible" },
+                new() { Marca = "Mazda", Modelo = "CX-30 Grand Touring", Anio = 2024, Placa = "LKP990", Vin = "3MZDM340W0067890", Color = "Azul Marino", Tipo = "SUV", Kilometraje = 8000, PrecioVenta = 0m, PrecioRentaDia = 220000m, Estado = "Disponible" },
+
+                // Vitrina de Venta (Vehículos nuevos 0 Km sin placa fija / placa temporal en trámite)
+                new() { Marca = "Renault", Modelo = "Duster Iconic 1.3T 4x4", Anio = 2025, Placa = "TMP-DUST01", Vin = "93YHRD00123456789", Color = "Naranja Atacama", Tipo = "SUV", Kilometraje = 0, PrecioVenta = 98000000m, PrecioRentaDia = 0m, Estado = "Disponible" },
+                new() { Marca = "Nissan", Modelo = "Kicks Exclusive CVT", Anio = 2025, Placa = "TMP-KICK02", Vin = "3N1CP5CU1RL123456", Color = "Gris Plata", Tipo = "SUV", Kilometraje = 0, PrecioVenta = 105000000m, PrecioRentaDia = 0m, Estado = "Disponible" },
+                new() { Marca = "Kia", Modelo = "Sportage GT Line AWD", Anio = 2025, Placa = "TMP-SPOR03", Vin = "KNAFS81ABR7654321", Color = "Negro Perlado", Tipo = "SUV", Kilometraje = 0, PrecioVenta = 142000000m, PrecioRentaDia = 0m, Estado = "Disponible" }
             };
             await context.Vehiculos.AddRangeAsync(vehiculos);
             await context.SaveChangesAsync();

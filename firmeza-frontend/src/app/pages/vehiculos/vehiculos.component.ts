@@ -31,8 +31,8 @@ export class VehiculosComponent implements OnInit {
   modoEdicion = signal<boolean>(false);
   vehiculoIdEnEdicion = signal<number | null>(null);
 
-  // Modalidad seleccionada en el formulario: 'venta' | 'renta' | 'ambos'
-  modalidadVehiculo = signal<'venta' | 'renta' | 'ambos'>('venta');
+  // Modalidad seleccionada en el formulario: 'venta' | 'renta'
+  modalidadVehiculo = signal<'venta' | 'renta'>('venta');
 
   // Indicador si es auto nuevo 0 Km sin placa fija (en trámite)
   esAutoNuevoSinPlaca = signal<boolean>(true);
@@ -45,21 +45,21 @@ export class VehiculosComponent implements OnInit {
   // Modelo del formulario
   nuevoVehiculo: VehiculoCreate = this.getVehiculoInicial();
 
-  // Filtrado reactivo según la pestaña activa (Separación Venta vs Renta)
+  // Filtrado reactivo según la pestaña activa (Separación Venta sin placa vs Renta con placa)
   vehiculosFiltrados = computed(() => {
     const pestana = this.pestanaModalidad();
     const lista = this.vehiculos();
     if (pestana === 'venta') {
-      return lista.filter(v => v.precioVenta > 0);
+      return lista.filter(v => this.esPlacaProvisional(v.placa) && v.precioVenta > 0);
     }
     if (pestana === 'renta') {
-      return lista.filter(v => v.precioRentaDia > 0);
+      return lista.filter(v => !this.esPlacaProvisional(v.placa) && v.precioRentaDia > 0);
     }
     return lista;
   });
 
-  totalVentaCount = computed(() => this.vehiculos().filter(v => v.precioVenta > 0).length);
-  totalRentaCount = computed(() => this.vehiculos().filter(v => v.precioRentaDia > 0).length);
+  totalVentaCount = computed(() => this.vehiculos().filter(v => this.esPlacaProvisional(v.placa) && v.precioVenta > 0).length);
+  totalRentaCount = computed(() => this.vehiculos().filter(v => !this.esPlacaProvisional(v.placa) && v.precioRentaDia > 0).length);
 
   ngOnInit(): void {
     this.cargarVehiculos();
@@ -91,7 +91,7 @@ export class VehiculosComponent implements OnInit {
   esPlacaProvisional(placa?: string | null): boolean {
     if (!placa) return true;
     const p = placa.trim().toUpperCase();
-    return p.startsWith('TMP-') || p.startsWith('PROV-') || p === 'EN TRÁMITE' || p === 'SIN PLACA' || p === 'EN TRAMITE';
+    return p.startsWith('TMP-') || p.startsWith('PROV-') || p === 'EN TRÁMITE' || p === 'SIN PLACA' || p === 'EN TRAMITE' || p === 'S/P' || p === 'TRAMITE' || p === '';
   }
 
   abrirModalCrear(modalidadPorDefecto?: 'venta' | 'renta'): void {
@@ -106,7 +106,8 @@ export class VehiculosComponent implements OnInit {
     if (modalidadInicial === 'venta') {
       this.nuevoVehiculo.precioRentaDia = 0;
       this.nuevoVehiculo.kilometraje = 0;
-    } else if (modalidadInicial === 'renta') {
+      this.nuevoVehiculo.placa = '';
+    } else {
       this.nuevoVehiculo.precioVenta = 0;
     }
 
@@ -118,17 +119,9 @@ export class VehiculosComponent implements OnInit {
     this.modoEdicion.set(true);
     this.vehiculoIdEnEdicion.set(auto.id);
 
-    // Determinar modalidad existente
-    if (auto.precioVenta > 0 && auto.precioRentaDia === 0) {
-      this.modalidadVehiculo.set('venta');
-    } else if (auto.precioRentaDia > 0 && auto.precioVenta === 0) {
-      this.modalidadVehiculo.set('renta');
-    } else {
-      this.modalidadVehiculo.set('ambos');
-    }
-
     const esProvisional = this.esPlacaProvisional(auto.placa);
     this.esAutoNuevoSinPlaca.set(esProvisional);
+    this.modalidadVehiculo.set(esProvisional ? 'venta' : 'renta');
 
     this.nuevoVehiculo = {
       marca: auto.marca,
@@ -154,22 +147,22 @@ export class VehiculosComponent implements OnInit {
     this.vehiculoIdEnEdicion.set(null);
   }
 
-  onModalidadChange(modalidad: 'venta' | 'renta' | 'ambos'): void {
+  onModalidadChange(modalidad: 'venta' | 'renta'): void {
     this.modalidadVehiculo.set(modalidad);
     if (modalidad === 'venta') {
       this.nuevoVehiculo.precioRentaDia = 0;
+      this.nuevoVehiculo.kilometraje = 0;
+      this.esAutoNuevoSinPlaca.set(true);
+      this.nuevoVehiculo.placa = '';
       if (this.nuevoVehiculo.precioVenta <= 0) {
         this.nuevoVehiculo.precioVenta = 50000000;
       }
-    } else if (modalidad === 'renta') {
+    } else {
       this.nuevoVehiculo.precioVenta = 0;
       this.esAutoNuevoSinPlaca.set(false);
       if (this.nuevoVehiculo.precioRentaDia <= 0) {
         this.nuevoVehiculo.precioRentaDia = 150000;
       }
-    } else {
-      if (this.nuevoVehiculo.precioVenta <= 0) this.nuevoVehiculo.precioVenta = 50000000;
-      if (this.nuevoVehiculo.precioRentaDia <= 0) this.nuevoVehiculo.precioRentaDia = 150000;
     }
   }
 
@@ -186,34 +179,32 @@ export class VehiculosComponent implements OnInit {
 
     const modalidad = this.modalidadVehiculo();
 
-    // Validar precios según modalidad
-    if (modalidad === 'venta' && this.nuevoVehiculo.precioVenta <= 0) {
-      this.mensajeError.set('Por favor ingresa un precio de venta válido.');
-      return;
-    }
-    if (modalidad === 'renta' && this.nuevoVehiculo.precioRentaDia <= 0) {
-      this.mensajeError.set('Por favor ingresa una tarifa de renta por día válida.');
-      return;
-    }
-
-    // Manejo de la Placa (Opcional para autos nuevos / En trámite)
-    if (modalidad === 'renta' && (!this.nuevoVehiculo.placa || !this.nuevoVehiculo.placa.trim())) {
-      this.mensajeError.set('Los vehículos de renta deben tener una placa registrada para circular legalmente.');
-      return;
-    }
-
-    // Si es auto nuevo 0 Km sin placa fija o se dejó vacía en venta, generar identificador temporal único
-    if (this.esAutoNuevoSinPlaca() || !this.nuevoVehiculo.placa?.trim()) {
-      const sufijo = Math.random().toString(36).substring(2, 7).toUpperCase();
-      this.nuevoVehiculo.placa = `TMP-${sufijo}`;
-    } else {
-      this.nuevoVehiculo.placa = this.nuevoVehiculo.placa.trim().toUpperCase();
-    }
-
-    // Ajustar precios
+    // Validar precios y placas según modalidad
     if (modalidad === 'venta') {
+      if (this.nuevoVehiculo.precioVenta <= 0) {
+        this.mensajeError.set('Por favor ingresa un precio de venta válido.');
+        return;
+      }
       this.nuevoVehiculo.precioRentaDia = 0;
-    } else if (modalidad === 'renta') {
+
+      // En venta: el vehículo no tiene placa fija (es 0 Km en vitrina con placa provisional)
+      if (this.esAutoNuevoSinPlaca() || !this.nuevoVehiculo.placa?.trim() || this.esPlacaProvisional(this.nuevoVehiculo.placa)) {
+        const sufijo = Math.random().toString(36).substring(2, 7).toUpperCase();
+        this.nuevoVehiculo.placa = `TMP-${sufijo}`;
+      } else {
+        this.nuevoVehiculo.placa = `TMP-${this.nuevoVehiculo.placa.trim().toUpperCase()}`;
+      }
+    } else {
+      // Modalidad Renta: el vehículo debe tener placa registrada obligatoria
+      if (this.nuevoVehiculo.precioRentaDia <= 0) {
+        this.mensajeError.set('Por favor ingresa una tarifa de renta por día válida.');
+        return;
+      }
+      if (!this.nuevoVehiculo.placa || !this.nuevoVehiculo.placa.trim() || this.esPlacaProvisional(this.nuevoVehiculo.placa)) {
+        this.mensajeError.set('Los vehículos de renta deben tener una placa oficial válida para circular legalmente.');
+        return;
+      }
+      this.nuevoVehiculo.placa = this.nuevoVehiculo.placa.trim().toUpperCase();
       this.nuevoVehiculo.precioVenta = 0;
     }
 
@@ -277,13 +268,17 @@ export class VehiculosComponent implements OnInit {
   }
 
   solicitarVehiculo(vehiculo: Vehiculo, modalidad: 'compra' | 'renta'): void {
-    this.router.navigate(['/ventas'], {
-      queryParams: {
-        tipo: 'vehiculo',
-        id: vehiculo.id,
-        modalidad: modalidad
-      }
-    });
+    if (modalidad === 'compra') {
+      this.router.navigate(['/ventas'], {
+        queryParams: {
+          tipo: 'vehiculo',
+          id: vehiculo.id
+        }
+      });
+    } else {
+      this.mensajeAccion.set(`Vehículo ${vehiculo.marca} ${vehiculo.modelo} (Placa: ${vehiculo.placa}) seleccionado para renta diaria ($${vehiculo.precioRentaDia.toLocaleString('es-CO')} COP/día). Puedes contactar al asesor comercial para tramitar el contrato de alquiler.`);
+      setTimeout(() => this.mensajeAccion.set(null), 6000);
+    }
   }
 
   private getVehiculoInicial(): VehiculoCreate {
