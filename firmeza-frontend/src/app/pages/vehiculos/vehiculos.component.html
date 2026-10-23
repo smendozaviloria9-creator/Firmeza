@@ -5,9 +5,11 @@
     </h2>
     <p class="text-muted mb-0">Gestión y visualización de la flota de autos para venta y renta diaria.</p>
   </div>
-  <button class="btn btn-warning fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrear()">
-    <i class="bi bi-plus-circle me-1"></i> Añadir Vehículo
-  </button>
+  @if (authService.hasRole('Administrador')) {
+    <button class="btn btn-warning fw-semibold shadow-sm px-3 py-2" (click)="abrirModalCrear()">
+      <i class="bi bi-plus-circle me-1"></i> Añadir Vehículo
+    </button>
+  }
 </div>
 
 <!-- Pestañas para Separar Venta vs Renta -->
@@ -138,6 +140,7 @@
                 <span class="badge bg-danger">Vendido</span>
               }
 
+              @if (authService.hasRole('Administrador')) {
                 <button
                   type="button"
                   class="btn btn-sm btn-outline-light border-0 py-0 px-1 text-warning"
@@ -154,6 +157,7 @@
                 >
                   <i class="bi bi-trash"></i>
                 </button>
+              }
             </div>
           </div>
 

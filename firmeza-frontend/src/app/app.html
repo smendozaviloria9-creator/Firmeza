@@ -21,16 +21,18 @@
             <i class="bi bi-tools me-1"></i> Repuestos
           </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/ventas" routerLinkActive="active">
-            <i class="bi bi-receipt me-1"></i> Ventas
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/clientes" routerLinkActive="active">
-            <i class="bi bi-people me-1"></i> Clientes
-          </a>
-        </li>
+        @if (authService.hasRole('Administrador')) {
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/ventas" routerLinkActive="active">
+              <i class="bi bi-receipt me-1"></i> Ventas
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/clientes" routerLinkActive="active">
+              <i class="bi bi-people me-1"></i> Clientes
+            </a>
+          </li>
+        }
       </ul>
 
       <ul class="navbar-nav ms-auto align-items-center">
@@ -38,6 +40,11 @@
           <li class="nav-item me-3 text-white">
             <i class="bi bi-person-circle text-warning me-1"></i>
             <span class="small fw-semibold">{{ user.nombreCompleto }}</span>
+            @if (authService.hasRole('Administrador')) {
+              <span class="badge bg-danger ms-1">Admin</span>
+            } @else {
+              <span class="badge bg-primary ms-1">Cliente</span>
+            }
           </li>
           <li class="nav-item">
             <button class="btn btn-outline-danger btn-sm" (click)="authService.logout()">

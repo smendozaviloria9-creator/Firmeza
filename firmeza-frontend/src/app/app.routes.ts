@@ -6,6 +6,7 @@ import { RepuestosComponent } from './pages/repuestos/repuestos.component';
 import { VentasComponent } from './pages/ventas/ventas.component';
 import { ClientesComponent } from './pages/clientes/clientes.component';
 import { authGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/vehiculos', pathMatch: 'full' },
@@ -13,7 +14,7 @@ export const routes: Routes = [
   { path: 'registro', component: RegistroComponent },
   { path: 'vehiculos', component: VehiculosComponent, canActivate: [authGuard] },
   { path: 'repuestos', component: RepuestosComponent, canActivate: [authGuard] },
-  { path: 'ventas', component: VentasComponent, canActivate: [authGuard] },
-  { path: 'clientes', component: ClientesComponent, canActivate: [authGuard] },
+  { path: 'ventas', component: VentasComponent, canActivate: [authGuard, adminGuard] },
+  { path: 'clientes', component: ClientesComponent, canActivate: [authGuard, adminGuard] },
   { path: '**', redirectTo: '/vehiculos' }
 ];

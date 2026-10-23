@@ -51,6 +51,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<ActionResult<ProductoDto>> Create(ProductoCreateDto dto)
     {
         var producto = _mapper.Map<Producto>(dto);
@@ -61,6 +62,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<IActionResult> Update(int id, ProductoUpdateDto dto)
     {
         var producto = await _context.Productos.FindAsync(id);
@@ -72,6 +74,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<IActionResult> Delete(int id)
     {
         var producto = await _context.Productos.FindAsync(id);
