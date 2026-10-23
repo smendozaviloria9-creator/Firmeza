@@ -19,10 +19,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Identity con roles (Administrador / Cliente)
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
-        options.Password.RequireDigit = true;
+        options.Password.RequireDigit = false;
         options.Password.RequiredLength = 6;
-        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequireNonAlphanumeric = false;
         options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
         options.SignIn.RequireConfirmedAccount = false;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()

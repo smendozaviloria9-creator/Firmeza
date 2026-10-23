@@ -4,9 +4,11 @@ using System.Text;
 using Firmeza.Application.DTOs.Auth;
 using Firmeza.Domain.Entities;
 using Firmeza.Infrastructure.Identity;
+using Firmeza.Infrastructure.Data;
 using Firmeza.Application.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Firmeza.Api.Controllers;
@@ -19,17 +21,20 @@ public class AuthController : ControllerBase
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
+    private readonly ApplicationDbContext _context;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IConfiguration configuration,
-        IEmailService emailService)
+        IEmailService emailService,
+        ApplicationDbContext context)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _configuration = configuration;
         _emailService = emailService;
+        _context = context;
     }
 
     [HttpPost("login")]
@@ -77,6 +82,37 @@ public class AuthController : ControllerBase
         }
 
         await _userManager.AddToRoleAsync(user, Roles.Cliente);
+
+        try
+        {
+            var partes = (dto.NombreCompleto ?? "").Trim().Split(' ', 2);
+            var nombres = partes.Length > 0 && !string.IsNullOrWhiteSpace(partes[0]) ? partes[0] : "Cliente";
+            var apellidos = partes.Length > 1 && !string.IsNullOrWhiteSpace(partes[1]) ? partes[1] : "Firmeza";
+
+            var cliente = await _context.Clientes.FirstOrDefaultAsync(c => c.Correo == dto.Email);
+            if (cliente is null)
+            {
+                cliente = new Cliente
+                {
+                    Nombres = nombres,
+                    Apellidos = apellidos,
+                    Documento = "CC-" + DateTime.UtcNow.Ticks.ToString()[^8..],
+                    Correo = dto.Email,
+                    Telefono = "3000000000",
+                    Edad = 18,
+                    FechaRegistro = DateTime.UtcNow
+                };
+                _context.Clientes.Add(cliente);
+                await _context.SaveChangesAsync();
+            }
+
+            user.ClienteId = cliente.Id;
+            await _userManager.UpdateAsync(user);
+        }
+        catch
+        {
+            // Si ocurre un error al asociar la ficha de cliente, no interrumpir el registro del usuario
+        }
 
         // Notificacion por correo de bienvenida (Task 8)
         await _emailService.EnviarCorreoAsync(

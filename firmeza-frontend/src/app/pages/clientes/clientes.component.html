@@ -136,6 +136,13 @@
 
         <form (ngSubmit)="guardarCliente()">
           <div class="modal-body p-4">
+            @if (mensajeError()) {
+              <div class="alert alert-danger py-2 small mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                {{ mensajeError() }}
+              </div>
+            }
+
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label fw-semibold small">Nombres *</label>

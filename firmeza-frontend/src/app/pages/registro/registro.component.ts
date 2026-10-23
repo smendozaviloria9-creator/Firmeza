@@ -50,7 +50,8 @@ export class RegistroComponent {
       },
       error: (err) => {
         this.cargando.set(false);
-        this.mensajeError.set(err.error?.mensaje || 'Error al registrar la cuenta.');
+        const detalle = err.error?.mensaje || (typeof err.error === 'string' ? err.error : 'Error al registrar la cuenta.');
+        this.mensajeError.set(detalle);
       }
     });
   }
