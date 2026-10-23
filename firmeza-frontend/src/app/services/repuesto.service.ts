@@ -27,6 +27,10 @@ export class RepuestoService {
     return this.http.post<Repuesto>(this.baseUrl, repuesto);
   }
 
+  actualizarRepuesto(id: number, repuesto: RepuestoCreate): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/${id}`, repuesto);
+  }
+
   eliminarRepuesto(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }

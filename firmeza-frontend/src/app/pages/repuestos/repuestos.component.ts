@@ -23,8 +23,10 @@ export class RepuestosComponent implements OnInit {
   mensajeError = signal<string | null>(null);
   mensajeCarrito = signal<string | null>(null);
 
-  // Modal para agregar repuesto
+  // Modal para agregar o editar repuesto
   mostrarModalCrear = signal<boolean>(false);
+  modoEdicion = signal<boolean>(false);
+  repuestoIdEnEdicion = signal<number | null>(null);
 
   // Filtros
   buscar = '';
@@ -60,22 +62,42 @@ export class RepuestosComponent implements OnInit {
   }
 
   abrirModalCrear(): void {
+    this.modoEdicion.set(false);
+    this.repuestoIdEnEdicion.set(null);
     this.nuevoRepuesto = this.getRepuestoInicial();
+    this.mensajeError.set(null);
+    this.mostrarModalCrear.set(true);
+  }
+
+  abrirModalEditar(item: Repuesto): void {
+    this.modoEdicion.set(true);
+    this.repuestoIdEnEdicion.set(item.id);
+    this.nuevoRepuesto = {
+      nombre: item.nombre,
+      descripcion: item.descripcion || '',
+      categoria: item.categoria,
+      unidadMedida: item.unidadMedida,
+      precioUnitario: item.precioUnitario,
+      stock: item.stock,
+      activo: item.activo
+    };
     this.mensajeError.set(null);
     this.mostrarModalCrear.set(true);
   }
 
   cerrarModalCrear(): void {
     this.mostrarModalCrear.set(false);
+    this.modoEdicion.set(false);
+    this.repuestoIdEnEdicion.set(null);
   }
 
   guardarRepuesto(): void {
     if (!this.authService.isAuthenticated()) {
-      this.mensajeError.set('Debes iniciar sesión para registrar un nuevo repuesto.');
+      this.mensajeError.set('Debes iniciar sesión para registrar o editar un repuesto.');
       return;
     }
 
-    if (!this.nuevoRepuesto.nombre || !this.nuevoRepuesto.categoria || this.nuevoRepuesto.precioUnitario <= 0) {
+    if (!this.nuevoRepuesto.nombre?.trim() || !this.nuevoRepuesto.categoria || this.nuevoRepuesto.precioUnitario <= 0) {
       this.mensajeError.set('El nombre, la categoría y el precio son obligatorios.');
       return;
     }
@@ -83,20 +105,39 @@ export class RepuestosComponent implements OnInit {
     this.guardando.set(true);
     this.mensajeError.set(null);
 
-    this.repuestoService.crearRepuesto(this.nuevoRepuesto).subscribe({
-      next: (creado) => {
-        this.guardando.set(false);
-        this.mostrarModalCrear.set(false);
-        this.mensajeCarrito.set(`¡Repuesto "${creado.nombre}" añadido con éxito al inventario!`);
-        this.cargarRepuestos();
-        setTimeout(() => this.mensajeCarrito.set(null), 4000);
-      },
-      error: (err) => {
-        this.guardando.set(false);
-        const detalle = err.error?.mensaje || 'Error al guardar el repuesto. Verifica los datos.';
-        this.mensajeError.set(detalle);
-      }
-    });
+    if (this.modoEdicion() && this.repuestoIdEnEdicion()) {
+      // Modo Actualización / Edición
+      this.repuestoService.actualizarRepuesto(this.repuestoIdEnEdicion()!, this.nuevoRepuesto).subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.mostrarModalCrear.set(false);
+          this.mensajeCarrito.set(`¡Repuesto "${this.nuevoRepuesto.nombre}" actualizado con éxito!`);
+          this.cargarRepuestos();
+          setTimeout(() => this.mensajeCarrito.set(null), 4000);
+        },
+        error: (err) => {
+          this.guardando.set(false);
+          const detalle = err.error?.mensaje || 'Error al actualizar el repuesto. Verifica los datos.';
+          this.mensajeError.set(detalle);
+        }
+      });
+    } else {
+      // Modo Creación
+      this.repuestoService.crearRepuesto(this.nuevoRepuesto).subscribe({
+        next: (creado) => {
+          this.guardando.set(false);
+          this.mostrarModalCrear.set(false);
+          this.mensajeCarrito.set(`¡Repuesto "${creado.nombre}" añadido con éxito al inventario!`);
+          this.cargarRepuestos();
+          setTimeout(() => this.mensajeCarrito.set(null), 4000);
+        },
+        error: (err) => {
+          this.guardando.set(false);
+          const detalle = err.error?.mensaje || 'Error al guardar el repuesto. Verifica los datos.';
+          this.mensajeError.set(detalle);
+        }
+      });
+    }
   }
 
   eliminarRepuesto(id: number, nombre: string): void {
